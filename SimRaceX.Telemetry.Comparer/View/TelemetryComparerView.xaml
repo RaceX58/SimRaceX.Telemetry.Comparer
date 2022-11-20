@@ -1,0 +1,266 @@
+﻿<UserControl x:Class="SimRaceX.Telemetry.Comparer.View.TelemetryComparerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SimRaceX.Telemetry.Comparer.View"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" 
+             xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
+             xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             xmlns:paz="clr-namespace:Wpf.Controls.PanAndZoom;assembly=Wpf.Controls.PanAndZoom"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <styles:SHSection
+           Grid.Row="0"
+           Title="Configuration">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel               
+                    VerticalAlignment="Top"
+                    Margin="20,20,0,20"
+                    >
+
+                    <StackPanel
+                    Grid.Row="0"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Top"
+                    Margin="20,0,0,0"
+                    >
+                        <TextBlock
+                        Text="Display throttle trace"
+                        Width="150"
+                        />
+                        <styles:SHToggleButton
+                        Margin="20,0,0,0"                       
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsChecked="{Binding Settings.ShowThrottleTrace, UpdateSourceTrigger=PropertyChanged}"
+                        />
+                    </StackPanel>
+                    <StackPanel
+                    Grid.Row="0"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Top"
+                    Margin="20,10,0,0"
+                    >
+                        <TextBlock
+                        Text="Display brake trace"
+                        Width="150"
+                        />
+                        <styles:SHToggleButton
+                        Margin="20,0,0,0"                       
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsChecked="{Binding Settings.ShowBrakeTrace}"
+                        />
+                    </StackPanel>
+                    <StackPanel
+                    Grid.Row="0"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Top"
+                    Margin="20,10,0,0"
+                    >
+                        <TextBlock
+                        Text="Display speed trace"
+                        Width="150"
+                        />
+                        <styles:SHToggleButton
+                        Margin="20,0,0,0"                       
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        IsChecked="{Binding Settings.ShowSpeedTrace}"
+                        />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        >
+                        <TextBlock
+                            Text="Display gauges"
+                            Width="150"
+                            />
+                        <styles:SHToggleButton
+                            Margin="20,0,0,0"                       
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Settings.ShowGauges}"
+                            />
+                    </StackPanel>
+
+
+                </StackPanel>
+               
+            </Grid>
+       
+
+        </styles:SHSection>
+        <styles:SHSection
+           Grid.Row="1"
+           Title="Available telemetry datas">
+            <StackPanel>
+                <StackPanel
+                    Orientation="Horizontal"
+                     HorizontalAlignment="Right"
+                    >
+                    <styles:SHButtonPrimary                  
+                        Margin="10,0,0,0"
+                        Content="Import"
+                        Command="{Binding ImportCarTrackTelemetryCommand}"
+                        Width="75"                   
+                        />
+                    <styles:SHButtonPrimary                   
+                        Margin="10,0,0,0"
+                        Content="Export"
+                        Command="{Binding ExportCarTrackTelemetryCommand}"
+                        Width="75"                   
+                        />
+
+                </StackPanel>
+                <ListView   
+                    Margin="0,10,0,0"
+                    ItemsSource="{Binding Settings.CarTrackTelemetries, UpdateSourceTrigger=PropertyChanged}" 
+                    SelectedItem="{Binding SelectedCarTrackTelemetry}"
+                    Height="250"
+                    >
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn DisplayMemberBinding="{Binding GameName, UpdateSourceTrigger=PropertyChanged}" Width="150">
+                                <GridViewColumnHeader Content="Game" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding CarName, UpdateSourceTrigger=PropertyChanged}" Width="150">
+                                <GridViewColumnHeader Content="Car" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding TrackName, UpdateSourceTrigger=PropertyChanged}" Width="250">
+                                <GridViewColumnHeader Content="Track" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}" Width="200">
+                                <GridViewColumnHeader Content="Player name" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding LapTime,StringFormat=mm\\:ss\\.fff, UpdateSourceTrigger=PropertyChanged}" Width="125" >
+                                <GridViewColumnHeader Content="Lap time" />
+                            </GridViewColumn>
+                            <GridViewColumn  >
+                                <GridViewColumnHeader Content="Use as reference lap" />
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox
+                                            IsChecked="{Binding UseAsReferenceLap, UpdateSourceTrigger=PropertyChanged}"
+                                            />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Width="50" >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding Path=DataContext.DeleteCarTrackTelemetryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"                                         
+                                        >
+                                            <iconPacks:PackIconMaterialDesign                                              
+                                            Kind="Delete" 
+                                        />
+                                        </Button>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </StackPanel>
+
+        </styles:SHSection>
+        <styles:SHSection
+            Grid.Row="2"
+            Title="Telemetry">
+            <oxy:Plot  
+                x:Name="plot"
+                Grid.Column="1" 
+                VerticalAlignment="Top" 
+                Background="#00FFFFFF" 
+                Margin="-8,-6,0,-8" 
+                BorderThickness="1"
+                IsMouseWheelEnabled="False" 
+                PlotAreaBorderThickness="0,0,0,1" 
+                PlotAreaBorderColor="{DynamicResource BlackColor}" 
+                Height="200" 
+                PreviewMouseDown="plot_PreviewMouseDown"
+                >
+                <oxy:Plot.DefaultTrackerTemplate>
+                    <ControlTemplate>
+                        <oxy:TrackerControl 
+                            Position="{Binding Position}" 
+                            LineStroke="Red"                           
+                            HorizontalLineVisibility="Collapsed"
+                            >
+                           
+                        </oxy:TrackerControl>
+                      
+                    </ControlTemplate>
+                </oxy:Plot.DefaultTrackerTemplate>
+                <!--<oxy:Plot.Annotations>
+                    <oxy:LineAnnotation
+                        Type="Vertical"
+                        X="0.2"                       
+                        />
+                </oxy:Plot.Annotations>-->
+                <oxy:Plot.Series>
+                    <oxy:LineSeries 
+                        BorderThickness="0" 
+                        Color="#4CAF50" 
+                        ItemsSource="{Binding Path=ThrottleLineSeries}"
+                    
+                        />
+                    <oxy:LineSeries 
+                        BorderThickness="0" 
+                        Color="#F44336" 
+                        ItemsSource="{Binding Path=BrakeLineSeries}" />
+                </oxy:Plot.Series>
+                <oxy:Plot.Axes>
+                    <oxy:LinearAxis IsAxisVisible="True" Position="Bottom" FontSize="8" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" Opacity="0.5" TicklineColor="{DynamicResource BlackColor}" MajorStep="20" MajorGridlineColor="#4497BCC1" />
+                    <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="Transparent" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MajorGridlineStyle="Dot" MajorStep="20" MajorGridlineThickness="1" Minimum="0" Maximum="105" />
+                    <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MinorStep="50" MajorStep="50" Minimum="0" Maximum="105" />
+                </oxy:Plot.Axes>
+            </oxy:Plot>
+        </styles:SHSection>
+        <!--<styles:SHSection
+            Grid.Row="3"
+            Title="Map">
+            <paz:ZoomBorder 
+                Name="ZoomBorder"               
+                ZoomSpeed="1.2"
+                Stretch="None"
+                Background="#222"
+                ClipToBounds="True"
+                Focusable="True" 
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Stretch">
+                <Canvas Name="mapCanvas"
+                        Width="300" 
+                        Height="400"  >
+                </Canvas>
+
+            </paz:ZoomBorder>
+
+
+        </styles:SHSection>-->
+    </Grid>
+ 
+  
+</UserControl>

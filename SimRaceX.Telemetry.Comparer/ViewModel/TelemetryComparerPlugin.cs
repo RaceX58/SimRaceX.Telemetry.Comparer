@@ -32,6 +32,7 @@ using System.Windows.Shapes;
 using WoteverCommon;
 using System.IO.Ports;
 using OxyPlot.Axes;
+using System.Windows.Markup;
 
 namespace SimRaceX.Telemetry.Comparer.ViewModel
 {
@@ -47,9 +48,11 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private static object _syncLock = new object();
         private List<TelemetryData> _CurrentLapTelemetry;
         private CarTrackTelemetry _SelectedCarTrackTelemetry;
+        private CarTrackTelemetry _CurrentSessionBestTelemetry;
         private PlotModel _TelemetryPlotModel;
         private ObservableCollection<DataPoint> _ThrottleLineSeries;
         private ObservableCollection<DataPoint> _BrakeLineSeries;
+        private Guid _CurrentSessionId;
         #endregion
 
         #region Properties
@@ -72,6 +75,15 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                     GetSelectedCarTrackTelemetryDatas(true);
                 }
                 OnPropertyChanged(nameof(SelectedCarTrackTelemetry)); 
+            }
+        }
+        public CarTrackTelemetry CurrentSessionBestTelemetry
+        {
+            get { return _CurrentSessionBestTelemetry; }
+            set
+            {
+                _CurrentSessionBestTelemetry = value;             
+                OnPropertyChanged(nameof(CurrentSessionBestTelemetry));
             }
         }
         public PlotModel TelemetryPlotModel
@@ -140,9 +152,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 }
                 else
                 {
-                    PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), new TimeSpan(0, 0, 0));
-                    PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), "");
-                    PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());                    
+                    ResetReferenceLap();                  
                 }
                
             }
@@ -246,9 +256,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             PluginManager = pluginManager;
             SimHub.Logging.Current.Info("Starting plugin SimRaceX.Telemetry.Comparer");
             Settings = this.ReadCommonSettings<TelemetryComparerSettings>("GeneralSettings", () => new TelemetryComparerSettings());
-            Settings.PropertyChanged += Settings_PropertyChanged;
 
-          
+            if (Settings.SelectedComparisonReference.Equals(default))
+                Settings.SelectedComparisonReference = Settings.ComparisonReferences.First();
+
+            Settings.PropertyChanged += Settings_PropertyChanged;
+            Settings.SelectedComparisonReferenceChanged += Settings_SelectedComparisonReferenceChanged;
+
+            pluginManager.SessionRestart += PluginManager_SessionRestart;
+
+
             ThrottleLineSeries = new ObservableCollection<DataPoint>();
             BrakeLineSeries = new ObservableCollection<DataPoint>();
 
@@ -265,52 +282,27 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             pluginManager.AddProperty("ShowThrottleTrace", this.GetType(), Settings.ShowThrottleTrace);
             pluginManager.AddProperty("ShowSpeedTrace", this.GetType(), Settings.ShowSpeedTrace);
             pluginManager.AddProperty("ShowGauges", this.GetType(), Settings.ShowGauges);
-
-
+            pluginManager.AddProperty("SelectedComparisonReference", this.GetType(), Settings.SelectedComparisonReference.Value);
 
             pluginManager.AddEvent("RefenceLapChanged", this.GetType());
 
             Settings.CarTrackTelemetries.CollectionChanged += CarTrackTelemetries_CollectionChanged;
-            SetPropertyChanged();
-
-
+            SetPropertyChanged();           
 
         }
 
-        private void Settings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "ShowBrakeTrace")
-                PluginManager.SetPropertyValue("ShowBrakeTrace", this.GetType(), Settings.ShowBrakeTrace);
-            else if (e.PropertyName == "ShowThrottleTrace")
-                PluginManager.SetPropertyValue("ShowThrottleTrace", this.GetType(), Settings.ShowThrottleTrace);
-            else if (e.PropertyName == "ShowSpeedTrace")
-                PluginManager.SetPropertyValue("ShowSpeedTrace", this.GetType(), Settings.ShowSpeedTrace);
-            else if (e.PropertyName == "ShowGauges")
-                PluginManager.SetPropertyValue("ShowGauges", this.GetType(), Settings.ShowGauges);
-        }
-
-        public Control GetWPFSettingsControl(PluginManager pluginManager)
-        {
-            _View = new TelemetryComparerView(this);
-            return _View;
-        }
-        public void End(PluginManager pluginManager)
-        {
-            this.SaveCommonSettings("GeneralSettings", Settings);
-        }
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-          
-
             if (!data.GameRunning)
             {
                 //if (_SelectedCarTrackTelemetry != null)
                 //    SelectedCarTrackTelemetry = null;
                 return;
-            }
+            }      
 
             if (data.GameRunning && !data.NewData.Spectating && data.OldData != null)
             {
+               
                 string gameName = data.GameName;
                 string carModel = data.NewData.CarModel;
                 string trackName = data.NewData.TrackName;
@@ -319,25 +311,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
                 if (data.GameName != null && data.NewData.CarModel != null && data.NewData.TrackId != null)
                 {
-
+                  
+                    //If not reference lap loaded, try to load a reference lap
                     if (SelectedCarTrackTelemetry is null)
-                    {
-                        _SelectedCarTrackTelemetry = _Settings.CarTrackTelemetries.FirstOrDefault(x =>
-                            x.GameName == gameName
-                            && x.TrackCode == trackCode
-                            && x.CarName == carModel
-                            && x.UseAsReferenceLap
-                            );
-                        if (SelectedCarTrackTelemetry != null)
-                        {
-                            pluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
-                            pluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
-                            pluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
-                        }
-                    }
+                        SetReferenceLap();                   
 
-                    if (data.OldData.CurrentLap != data.NewData.CurrentLap || tickCount == (SimHub.Licensing.LicenseManager.IsValid ? 3 : 0))
+                    //Main loop
+                    if (data.OldData.CurrentLap != data.NewData.CurrentLap
+                        || tickCount == (SimHub.Licensing.LicenseManager.IsValid ? 3 : 0))
                     {
+                        //If a property has changed
                         if (SelectedCarTrackTelemetry != null
                           &&
                           (
@@ -347,31 +330,20 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                           || SelectedCarTrackTelemetry.UseAsReferenceLap == false
                           )
                         )
-                        {
-                            _SelectedCarTrackTelemetry = _Settings.CarTrackTelemetries.FirstOrDefault(x =>
-                            x.GameName == gameName
-                            && x.TrackCode == trackCode
-                            && x.CarName == carModel
-                            && x.UseAsReferenceLap
-                            );
-                            if (_SelectedCarTrackTelemetry != null)
-                            {
-                                pluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
-                                pluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
-                                pluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
-                            }
-                       
-                        }
-
+                            //try to load a reference lap
+                            SetReferenceLap();                        
+                        //If current lap has changed
                         if (data.OldData.CurrentLap != data.NewData.CurrentLap)
                         {
+                            //Check the current lap telemetry is valid
                             if (_CurrentLapTelemetry != null && _CurrentLapTelemetry.Count > 0)
                             {
                                 double firstDataDistance = _CurrentLapTelemetry.First().LapDistance;
                                 double lastDataDistance = _CurrentLapTelemetry.Last().LapDistance;
-
+                                //Try to check if a complete lap has be done
                                 if (firstDataDistance < 0.1 && lastDataDistance > 0.9 && data.OldData.IsLapValid)
                                 {
+                                    //If no reference lap is set, set current lap as reference lap
                                     if (SelectedCarTrackTelemetry is null)
                                     {
                                         _SelectedCarTrackTelemetry = new CarTrackTelemetry
@@ -384,22 +356,25 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                             UseAsReferenceLap = true
                                         };
                                         lock (_syncLock)
-                                        {
+                                            //Add reference lap to list
                                             Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
-                                        }
+                                        
                                     }
-
+                                    //if latest lap is faster than reference lap
                                     if (SelectedCarTrackTelemetry.LapTime.TotalSeconds == 0
                                         ||
                                         SelectedCarTrackTelemetry.LapTime.TotalMilliseconds > data.OldData.CurrentLapTime.TotalMilliseconds
                                         )
                                     {
-                                        SelectedCarTrackTelemetry.TelemetryDatas = _CurrentLapTelemetry;
-                                        GetSelectedCarTrackTelemetryDatas(false);
+                                        //Update reference lap telemetry
+                                        SelectedCarTrackTelemetry.TelemetryDatas = _CurrentLapTelemetry;                                       
+
+                                        Task.Run(() => GetSelectedCarTrackTelemetryDatas(false));
+
                                         SelectedCarTrackTelemetry.LapTime = data.OldData.CurrentLapTime;
+
                                         pluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
                                         pluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
-
                                         this.SaveCommonSettings("GeneralSettings", Settings);
                                         pluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
                                     }
@@ -410,7 +385,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         else if (_CurrentLapTelemetry is null)
                             _CurrentLapTelemetry = new List<TelemetryData>();
 
-                        if (data.NewData.CurrentLapTime.TotalSeconds > 0)
+                        //Add data to current lap telemetry
+                        if (data.NewData.CurrentLapTime.TotalMilliseconds > 0)
                         {
                             _CurrentLapTelemetry.Add(new TelemetryData
                             {
@@ -423,12 +399,14 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                             });
 
                         }
+                        //if a reference lap is set
                         if (SelectedCarTrackTelemetry != null && SelectedCarTrackTelemetry.TelemetryDatas.Count > 0)
                         {
+                            //get current lap distance percent
                             double lapDistance = data.NewData.CarCoordinates[0];
                             double distance = SelectedCarTrackTelemetry.TelemetryDatas[0].LapDistance - lapDistance;
                             int index = -1;
-
+                            //loop
                             if (lapDistance <= 0.5)
                             {
                                 for (int i = 0; i < SelectedCarTrackTelemetry.TelemetryDatas.Count; i++)                                
@@ -438,6 +416,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                         break;
                                     }
                             }
+                            //loop reverse (in order to minimize possible number of iterations)
                             else
                             {
                                 for (int i = SelectedCarTrackTelemetry.TelemetryDatas.Count - 1; i >= 0; i--)
@@ -449,6 +428,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                     }
                                 }
                             }
+                            //get and display reference lap datas
                             if (index > -1)
                             {
                                 TelemetryData telemetryData = SelectedCarTrackTelemetry.TelemetryDatas[index];
@@ -466,6 +446,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         tickCount++;
                 }
             }
+        }
+        public void End(PluginManager pluginManager)
+        {
+            this.SaveCommonSettings("GeneralSettings", Settings);
         }
         public void GetSelectedCarTrackTelemetryDatas(bool getMap)
         {
@@ -491,7 +475,129 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             //if (getMap)
             //    LoadMap($@"C:\Program Files (x86)\SimHub\PluginsData\IRacing\MapRecords\{_SelectedCarTrackTelemetry.TrackCode}.shtl");
 
-         }
+         }       
+        public void ResetReferenceLap()
+        {
+            SelectedCarTrackTelemetry = null;
+            PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), new TimeSpan(0, 0, 0));
+            PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), "");
+            PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
+        }
+        private void SetPropertyChanged()
+        {
+            foreach (CarTrackTelemetry carTrackTelemetry in Settings.CarTrackTelemetries)
+                carTrackTelemetry.PropertyChanged += CarTrackTelemetry_PropertyChanged;
+        }
+        private void SetReferenceLap()
+        {
+            if (PluginManager.LastData.NewData is null)
+            {
+                ResetReferenceLap();
+                return;
+            }
+               
+
+            if (PluginManager.LastData.GameName != null 
+                && PluginManager.LastData.NewData.CarModel != null 
+                && PluginManager.LastData.NewData.TrackId != null)
+            {
+                string gameName = PluginManager.LastData.GameName;
+                string carModel = PluginManager.LastData.NewData.CarModel;
+                string trackName = PluginManager.LastData.NewData.TrackName;
+                string playerName = PluginManager.LastData.NewData.PlayerName;
+                string trackCode = PluginManager.LastData.NewData.TrackCode;
+
+                switch (Settings.SelectedComparisonReference.Key)
+                {
+                    case 0:
+                        {
+                            SelectedCarTrackTelemetry = _Settings.CarTrackTelemetries.FirstOrDefault(x =>
+                                    x.GameName == gameName
+                                    && x.TrackCode == trackCode
+                                    && x.CarName == carModel
+                                    && x.PlayerName == playerName
+                                    );
+                        }
+                        break;
+                    case 1:
+                        {
+                            SelectedCarTrackTelemetry = CurrentSessionBestTelemetry;
+                        }
+                        break;
+                    case 2:
+                        {
+                            SelectedCarTrackTelemetry = _Settings.CarTrackTelemetries.FirstOrDefault(x =>
+                               x.GameName == gameName
+                               && x.TrackCode == trackCode
+                               && x.CarName == carModel
+                               && x.UseAsReferenceLap
+                               );
+                        }
+                        break;
+                }
+
+                if (SelectedCarTrackTelemetry != null)
+                {
+                    PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
+                    PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
+                    PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
+                }
+            }
+
+                
+        }
+
+        public Control GetWPFSettingsControl(PluginManager pluginManager)
+        {
+            _View = new TelemetryComparerView(this);
+            return _View;
+        }
+        #endregion
+
+        #region Events
+        private void Settings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ShowBrakeTrace")
+                PluginManager.SetPropertyValue("ShowBrakeTrace", this.GetType(), Settings.ShowBrakeTrace);
+            else if (e.PropertyName == "ShowThrottleTrace")
+                PluginManager.SetPropertyValue("ShowThrottleTrace", this.GetType(), Settings.ShowThrottleTrace);
+            else if (e.PropertyName == "ShowSpeedTrace")
+                PluginManager.SetPropertyValue("ShowSpeedTrace", this.GetType(), Settings.ShowSpeedTrace);
+            else if (e.PropertyName == "ShowGauges")
+                PluginManager.SetPropertyValue("ShowGauges", this.GetType(), Settings.ShowGauges);
+        }
+        private void Settings_SelectedComparisonReferenceChanged(object sender, EventArgs e)
+        {
+            PluginManager.SetPropertyValue("SelectedComparisonReference", this.GetType(), Settings.SelectedComparisonReference.Value);
+            SetReferenceLap();              
+        }
+        private void PluginManager_SessionRestart(PluginManager manager)
+        {
+            CurrentSessionBestTelemetry = null;
+      
+            ResetReferenceLap();
+            SetReferenceLap();
+        }
+        private void CarTrackTelemetry_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName.Equals("UseAsReferenceLap") && (sender as CarTrackTelemetry).UseAsReferenceLap)
+            {
+                var item = sender as CarTrackTelemetry;
+                foreach (CarTrackTelemetry carTrackTelemetry in Settings.CarTrackTelemetries.Where(
+                    x => x.GameName == item.GameName && x.TrackCode == item.TrackCode && x.CarName == item.CarName))
+                {
+                    if (carTrackTelemetry != item)
+                        carTrackTelemetry.UseAsReferenceLap = false;
+                }
+                this.SaveCommonSettings("GeneralSettings", Settings);
+            }
+        }
+        private void CarTrackTelemetries_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            SetPropertyChanged();
+        }
+        #endregion
+
         //private void LoadMap(string file)
         //{
 
@@ -597,31 +703,6 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         //    _View.ZoomBorder.UpdateLayout();
         //    _View.ZoomBorder.AutoFit();
         //}
-        private void SetPropertyChanged()
-        {
-            foreach (CarTrackTelemetry carTrackTelemetry in Settings.CarTrackTelemetries)
-                carTrackTelemetry.PropertyChanged += CarTrackTelemetry_PropertyChanged;
-        }
-
-        private void CarTrackTelemetry_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName.Equals("UseAsReferenceLap") && (sender as CarTrackTelemetry).UseAsReferenceLap)
-            {
-                var item = sender as CarTrackTelemetry;
-                foreach(CarTrackTelemetry carTrackTelemetry in Settings.CarTrackTelemetries.Where(
-                    x=>x.GameName == item.GameName && x.TrackCode == item.TrackCode && x.CarName == item.CarName))
-                {
-                    if (carTrackTelemetry != item)
-                        carTrackTelemetry.UseAsReferenceLap = false;
-                }
-                this.SaveCommonSettings("GeneralSettings", Settings);
-            }
-        }
-        private void CarTrackTelemetries_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            SetPropertyChanged();
-        }
-        #endregion
 
     }
 }

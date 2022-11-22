@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,8 +15,14 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private bool _ShowBrakeTrace;
         private bool _ShowThrottleTrace;
         private bool _ShowSpeedTrace;
-        private bool _ShowGear;
         private bool _ShowGauges;
+        private Dictionary<int, string> _ComparisonReferences = new Dictionary<int, string>()
+        {
+            {0,"Personal best" },
+            {1, "Session best" },
+            {2, "Manual" }
+        };
+        private KeyValuePair<int,string> _SelectedComparisonReference;
         #endregion
 
         #region Properties
@@ -44,6 +51,25 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _ShowGauges; }
             set { _ShowGauges = value; OnPropertyChanged(nameof(ShowGauges)); }
         }
+        public Dictionary<int, string> ComparisonReferences
+        {
+            get { return _ComparisonReferences; }
+        }
+       
+        public KeyValuePair<int, string> SelectedComparisonReference
+        {
+            get { return _SelectedComparisonReference; }
+            set 
+            { 
+                _SelectedComparisonReference = value;
+                SelectedComparisonReferenceChanged?.Invoke(this, null);
+                OnPropertyChanged(nameof(SelectedComparisonReference)); 
+            }
+        }
+        #endregion
+
+        #region Events
+        public event EventHandler SelectedComparisonReferenceChanged;
         #endregion
     }
 }

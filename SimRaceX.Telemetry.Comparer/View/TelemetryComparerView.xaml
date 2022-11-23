@@ -169,14 +169,22 @@
 
                     </StackPanel>
                 </StackPanel>
-
-                <ui:ControlsEditor 
-                    Margin="40,5,10,10"
-                    Grid.Column="2"
-                    FriendlyName="Reset current session best" 
-                    ActionName="TelemetryComparerPlugin.ResetCurrentSessionBest"
-                    VerticalAlignment="Top"
-                    />
+                <StackPanel
+                     Margin="40,5,10,10"
+                     Grid.Column="2"
+                    >
+                    <ui:ControlsEditor 
+                        FriendlyName="Reset current session best" 
+                        ActionName="TelemetryComparerPlugin.ResetCurrentSessionBest"
+                        VerticalAlignment="Top"
+                        />
+                    <ui:ControlsEditor 
+                        FriendlyName="Cycle through comparison reference" 
+                        ActionName="TelemetryComparerPlugin.ResetCurrentSessionBest"
+                        VerticalAlignment="Top"
+                        />
+                </StackPanel>
+               
 
             </Grid>
        

@@ -378,6 +378,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             {
                 ResetCurrentSessionBest();
             });
+            this.AddAction("CycleComparisonReference", (a, b) =>
+            {
+                CycleComparisonReference();
+            });
 
             Settings.CarTrackTelemetries.CollectionChanged += CarTrackTelemetries_CollectionChanged;
             SetPropertyChanged();
@@ -736,6 +740,11 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             CurrentSessionBestTelemetry = null;
             ResetReferenceLap();
             SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : Current session reference lap has been reset");
+        }
+        void CycleComparisonReference()
+        {
+            
+          
         }
         #endregion
 

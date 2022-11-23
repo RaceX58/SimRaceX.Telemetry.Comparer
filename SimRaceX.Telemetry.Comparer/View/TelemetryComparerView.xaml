@@ -207,7 +207,7 @@
                 <ListView   
                     Margin="0,10,0,0"
                     ItemsSource="{Binding Settings.CarTrackTelemetries, UpdateSourceTrigger=PropertyChanged}" 
-                    SelectedItem="{Binding SelectedCarTrackTelemetry}"
+                    SelectedItem="{Binding SelectedViewTelemetry}"
                     Height="250"
                     >
                     <ListView.View>

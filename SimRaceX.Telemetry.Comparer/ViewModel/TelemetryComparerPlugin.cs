@@ -56,6 +56,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private ObservableCollection<DataPoint> _BrakeLineSeries;
         private Guid _CurrentSessionId;
         private double? _SteeringAngle;
+        private CarTrackTelemetry _SelectedViewTelemetry;
         #endregion
 
         #region Properties
@@ -72,12 +73,21 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             get { return _SelectedCarTrackTelemetry; }
             set 
             { 
-                _SelectedCarTrackTelemetry = value;
+                _SelectedCarTrackTelemetry = value;                
+                OnPropertyChanged(nameof(SelectedCarTrackTelemetry)); 
+            }
+        }
+        public CarTrackTelemetry SelectedViewTelemetry
+        {
+            get { return _SelectedViewTelemetry; }
+            set
+            {
+                _SelectedViewTelemetry = value;
                 if (_SelectedCarTrackTelemetry != null)
                 {
-                    GetSelectedCarTrackTelemetryDatas(true);
+                    GetSelectedViewTelemetryDatas(true);
                 }
-                OnPropertyChanged(nameof(SelectedCarTrackTelemetry)); 
+                OnPropertyChanged(nameof(SelectedViewTelemetry));
             }
         }
         public CarTrackTelemetry CurrentSessionBestTelemetry
@@ -175,6 +185,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 OnPropertyChanged(nameof(SelectedManualTelemetry));
             }
         }
+
         #endregion
 
         #region Commands
@@ -596,9 +607,9 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         {
             this.SaveCommonSettings("GeneralSettings", Settings);
         }
-        public void GetSelectedCarTrackTelemetryDatas(bool getMap)
+        public void GetSelectedViewTelemetryDatas(bool getMap)
         {
-            if (_SelectedCarTrackTelemetry is null)
+            if (SelectedViewTelemetry is null)
                 return;
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
@@ -606,7 +617,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 BrakeLineSeries.Clear();
             });
 
-            foreach (TelemetryData data in _SelectedCarTrackTelemetry.TelemetryDatas)
+            foreach (TelemetryData data in SelectedViewTelemetry.TelemetryDatas)
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {

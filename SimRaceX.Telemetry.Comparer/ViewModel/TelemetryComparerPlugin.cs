@@ -369,9 +369,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             });
 
             Settings.CarTrackTelemetries.CollectionChanged += CarTrackTelemetries_CollectionChanged;
-            SetPropertyChanged();           
+            SetPropertyChanged();
+
 
         }
+
+      
 
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
@@ -388,6 +391,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
             if (data.GameRunning && !data.NewData.Spectating && data.OldData != null)
             {
+               
+             
                 //update the current session id
                 if (data.SessionId != CurrentSessionId)
                     CurrentSessionId = data.SessionId;
@@ -403,8 +408,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 if (data.GameName != null && data.NewData.CarModel != null && data.NewData.TrackId != null)
                 {
                     //If not reference lap loaded, try to load a reference lap
-                    //if (SelectedCarTrackTelemetry is null)
-                    //    SetReferenceLap();
+                    if (SelectedCarTrackTelemetry is null)
+                        SetReferenceLap();
 
                     //Main loop
                     if (data.OldData.CurrentLap != data.NewData.CurrentLap
@@ -451,7 +456,14 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                             lock (_syncLock)
                                                 //Add reference lap to list
                                                 Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
-                                        }                                      
+                                        }
+                                        else if (Settings.SelectedComparisonReference.Key == 1)
+                                        {
+                                            CurrentSessionBestTelemetry = SelectedCarTrackTelemetry;
+                                            PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
+                                        }
+                                         
+                                   
 
                                     }
                                     //if latest lap is faster than reference lap
@@ -472,7 +484,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                         }   
                                         //else if we use session best
                                         else if (Settings.SelectedComparisonReference.Key == 1)
-                                        {                
+                                        {           
+                                            
                                             //try to get the personal best
                                             var personalBest = GetPersonalBestTelemetry();
                                             //if personal best is null
@@ -487,6 +500,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                                 ||
                                                 personalBest.LapTime.TotalMilliseconds > data.OldData.CurrentLapTime.TotalMilliseconds)
                                             {
+                                                personalBest.LapTime = data.OldData.CurrentLapTime;
+                                                personalBest.TelemetryDatas = _CurrentLapTelemetry;
                                                 //update reference lap
                                                 this.SaveCommonSettings("GeneralSettings", Settings);
                                             }
@@ -637,7 +652,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                             PersonalBestTelemetry = GetPersonalBestTelemetry();
                             if (PersonalBestTelemetry is null)
                                 ResetReferenceLap();
-                            else
+                            else if (PersonalBestTelemetry != SelectedCarTrackTelemetry)
                             {
                                 PersonalBestTelemetry.UseAsReferenceLap = true;
                                 SelectedCarTrackTelemetry = PersonalBestTelemetry;
@@ -649,13 +664,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         {
                             if (CurrentSessionBestTelemetry is null && SelectedCarTrackTelemetry != null)
                                 ResetReferenceLap();
-                            else
+                            else if (CurrentSessionBestTelemetry != null && SelectedCarTrackTelemetry != CurrentSessionBestTelemetry)
                                 SelectedCarTrackTelemetry = CurrentSessionBestTelemetry;
                         }
                         break;
                     case 2:
                         {
-                            if (SelectedManualTelemetry != null)
+                            if (SelectedManualTelemetry != null && SelectedCarTrackTelemetry != SelectedCarTrackTelemetry)
                             {
                                 SelectedManualTelemetry.UseAsReferenceLap = true;
                                 SelectedCarTrackTelemetry = SelectedManualTelemetry;
@@ -705,6 +720,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         {
             PluginManager.SetPropertyValue("SteeringAngle", this.GetType(), SteeringAngle);
         }
+        void ResetCurrentSessionBest()
+        {
+            CurrentSessionBestTelemetry = null;
+            ResetReferenceLap();
+            SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : Current session reference lap has been reset");
+        }
         #endregion
 
         #region Events
@@ -723,12 +744,9 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 OnPropertyChanged(nameof(SelectedManualTelemetry));
             }
         }
-        void ResetCurrentSessionBest()
-        {
-            CurrentSessionBestTelemetry = null;
-            ResetReferenceLap();
-            SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : Current session reference lap has been reset");
-        }
+   
+       
+
 
         private void Settings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {

@@ -14,7 +14,9 @@
              
           
              d:DesignHeight="450" d:DesignWidth="800">
-
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="boolToVis"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -29,6 +31,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>                    
                 </Grid.ColumnDefinitions>
                 <StackPanel               
                     VerticalAlignment="Top"
@@ -43,7 +46,7 @@
                         >
                         <TextBlock
                         Text="Display throttle trace"
-                        Width="150"
+                        Width="200"
                         />
                         <styles:SHToggleButton
                         Margin="20,0,0,0"                       
@@ -60,7 +63,7 @@
                     >
                         <TextBlock
                         Text="Display brake trace"
-                        Width="150"
+                        Width="200"
                         />
                         <styles:SHToggleButton
                         Margin="20,0,0,0"                       
@@ -77,7 +80,7 @@
                     >
                         <TextBlock
                         Text="Display speed trace"
-                        Width="150"
+                        Width="200"
                         />
                         <styles:SHToggleButton
                         Margin="20,0,0,0"                       
@@ -94,13 +97,30 @@
                         >
                         <TextBlock
                             Text="Display gauges"
-                            Width="150"
+                            Width="200"
                             />
                         <styles:SHToggleButton
                             Margin="20,0,0,0"                       
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
                             IsChecked="{Binding Settings.ShowGauges}"
+                            />
+                    </StackPanel>
+                    <StackPanel               
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        >
+                        <TextBlock
+                            Text="Display steering angle (iRacing only)"
+                            Width="200"
+                            />
+                        <styles:SHToggleButton
+                            Margin="20,0,0,0"                       
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Settings.ShowSteeringAngle}"
+                            IsEnabled="{Binding Settings.ShowGauges}"
                             />
                     </StackPanel>
 
@@ -112,7 +132,7 @@
                         Grid.Row="0"
                         Orientation="Horizontal"
                         VerticalAlignment="Top"
-                        Margin="20"
+                        Margin="20,10,0,0"
                         >
                         <TextBlock
                             Text="Comparison reference"
@@ -123,13 +143,41 @@
                             ItemsSource="{Binding Settings.ComparisonReferences}"
                             SelectedItem="{Binding Settings.SelectedComparisonReference}"
                             DisplayMemberPath="Value"  
+                            Width="200"
+                            />
+
+
+                    </StackPanel>
+                    <StackPanel                        
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        Visibility="{Binding IsManualMode, Converter={StaticResource boolToVis}}"
+                        >
+                        <TextBlock
+                            Text="Reference lap"
                             Width="150"
+                            VerticalAlignment="Center"
+                        />
+                        <ComboBox
+                            ItemsSource="{Binding AvailableManualTelemetries}"
+                            SelectedItem="{Binding SelectedManualTelemetry}"
+                            DisplayMemberPath="FormattedPlayerNameLapTime"  
+                            Width="200"
                             />
 
 
                     </StackPanel>
                 </StackPanel>
-               
+
+                <ui:ControlsEditor 
+                    Margin="40,5,10,10"
+                    Grid.Column="2"
+                    FriendlyName="Reset current session best" 
+                    ActionName="TelemetryComparerPlugin.ResetCurrentSessionBest"
+                    VerticalAlignment="Top"
+                    />
+
             </Grid>
        
 
@@ -185,7 +233,9 @@
                                     <DataTemplate>
                                         <CheckBox
                                             IsChecked="{Binding UseAsReferenceLap, UpdateSourceTrigger=PropertyChanged}"
+                                            IsEnabled="False"
                                             />
+                                        <!--IsEnabled="{Binding DataContext.IsManualMode, RelativeSource={RelativeSource AncestorType=UserControl}}"-->
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -209,7 +259,6 @@
                     </ListView.View>
                 </ListView>
             </StackPanel>
-
         </styles:SHSection>
         <styles:SHSection
             Grid.Row="2"

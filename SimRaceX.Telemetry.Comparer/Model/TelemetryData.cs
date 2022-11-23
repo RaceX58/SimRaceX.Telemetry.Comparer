@@ -15,6 +15,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private double _LapDistance;
         private double _Speed;
         private string _Gear;
+        private double? _SteeringAngle;
         #endregion
 
         #region Properties
@@ -47,6 +48,11 @@ namespace SimRaceX.Telemetry.Comparer.Model
         {
             get { return _Gear; }
             set { _Gear = value; OnPropertyChanged(nameof(Gear)); }
+        }
+        public double? SteeringAngle
+        {
+            get { return _SteeringAngle; }
+            set { _SteeringAngle = value; OnPropertyChanged(nameof(SteeringAngle)); }
         }
         #endregion
     }

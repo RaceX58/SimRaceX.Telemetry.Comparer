@@ -16,6 +16,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private bool _ShowThrottleTrace;
         private bool _ShowSpeedTrace;
         private bool _ShowGauges;
+        private bool _ShowSteeringAngle;
         private Dictionary<int, string> _ComparisonReferences = new Dictionary<int, string>()
         {
             {0,"Personal best" },
@@ -50,7 +51,13 @@ namespace SimRaceX.Telemetry.Comparer.Model
         {
             get { return _ShowGauges; }
             set { _ShowGauges = value; OnPropertyChanged(nameof(ShowGauges)); }
+        }  
+        public bool ShowSteeringAngle
+        {
+            get { return _ShowSteeringAngle; }
+            set { _ShowSteeringAngle = value; OnPropertyChanged(nameof(ShowSteeringAngle)); }
         }
+
         public Dictionary<int, string> ComparisonReferences
         {
             get { return _ComparisonReferences; }

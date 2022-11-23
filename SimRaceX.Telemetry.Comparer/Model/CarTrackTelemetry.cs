@@ -60,6 +60,10 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _UseAsReferenceLap; }
             set { _UseAsReferenceLap = value; OnPropertyChanged(nameof(UseAsReferenceLap));}
         }
+        public string FormattedPlayerNameLapTime
+        {
+            get { return $"{PlayerName} - {LapTime}"; }
+        }
         #endregion
 
         #region Cosntructor

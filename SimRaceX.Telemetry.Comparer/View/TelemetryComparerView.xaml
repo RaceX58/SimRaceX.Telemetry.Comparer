@@ -231,27 +231,49 @@
            Grid.Row="1"
            Title="Available telemetry datas">
             <StackPanel>
-                <StackPanel
+                <Grid>
+                    <StackPanel
                     Orientation="Horizontal"
-                     HorizontalAlignment="Right"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     >
-                    <styles:SHButtonPrimary                  
+                        <TextBlock
+                            Text="Filter current game/track/car laps"
+                            Width="200"
+                            VerticalAlignment="Center"
+                        />
+                        <styles:SHToggleButton
+                                              
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding FilterTelemetries, UpdateSourceTrigger=PropertyChanged}"
+                            />
+                    </StackPanel>
+                    <StackPanel
+                        Orientation="Horizontal"
+                         HorizontalAlignment="Right"
+                        >
+                        <styles:SHButtonPrimary                  
                         Margin="10,0,0,0"
                         Content="Import"
                         Command="{Binding ImportCarTrackTelemetryCommand}"
                         Width="75"                   
                         />
-                    <styles:SHButtonPrimary                   
+                        <styles:SHButtonPrimary                   
                         Margin="10,0,0,0"
                         Content="Export"
                         Command="{Binding ExportCarTrackTelemetryCommand}"
                         Width="75"                   
                         />
 
-                </StackPanel>
+                    </StackPanel>
+                </Grid>
+               
+                    
+                
                 <ListView   
                     Margin="0,10,0,0"
-                    ItemsSource="{Binding Settings.CarTrackTelemetries, UpdateSourceTrigger=PropertyChanged}" 
+                    ItemsSource="{Binding FilteredTelemetries, UpdateSourceTrigger=PropertyChanged}" 
                     SelectedItem="{Binding SelectedViewTelemetry}"
                     Height="250"
                     >

@@ -59,6 +59,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private int _IncidentCount;
         private CarTrackTelemetry _SelectedViewTelemetry;
         private bool _CurrentLapHasIncidents;
+        private bool _FilterTelemetries;
         #endregion
 
         #region Properties
@@ -75,7 +76,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             get { return _SelectedCarTrackTelemetry; }
             set 
             { 
-                _SelectedCarTrackTelemetry = value;                
+                _SelectedCarTrackTelemetry = value;
+                SelectedCarTrackTelemetryChanged?.Invoke(this, null);
                 OnPropertyChanged(nameof(SelectedCarTrackTelemetry)); 
             }
         }
@@ -151,8 +153,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             get { return _IncidentCount; }
             set
             {
-                _IncidentCount = value;
-                IncidentCountChanged?.Invoke(this, null);
+                _IncidentCount = value;                
                 OnPropertyChanged(nameof(IncidentCount));
             }
         }
@@ -236,6 +237,31 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 if (Settings.SelectedComparisonMode.Key == 1)
                     return !Settings.SessionBestDiscardInvalidLap || !_CurrentLapHasIncidents;
                 return true;
+            }
+        }
+        public bool FilterTelemetries
+        {
+            get { return _FilterTelemetries; }
+            set { _FilterTelemetries = value; OnPropertyChanged(nameof(FilterTelemetries)); OnPropertyChanged(nameof(FilteredTelemetries)); }
+        }
+        public List<CarTrackTelemetry> FilteredTelemetries
+        {
+            get
+            {
+                if (_FilterTelemetries && PluginManager.LastData != null && PluginManager.LastData.NewData != null)
+                {
+
+                    string gameName = PluginManager.LastData.GameName;
+                    string carModel = PluginManager.LastData.NewData.CarModel;
+                    string trackCode = PluginManager.LastData.NewData.TrackCode;
+                    return _Settings.CarTrackTelemetries.Where(x =>
+                                   x.GameName == gameName
+                                   && x.TrackCode == trackCode
+                                   && x.CarName == carModel
+                                   ).ToList();
+                }
+                else
+                    return _Settings.CarTrackTelemetries.ToList();
             }
         }
         #endregion
@@ -407,12 +433,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             Settings.SelectedComparisonReferenceChanged += Settings_SelectedComparisonReferenceChanged;
             CurrentSessionChanged += TelemetryComparerPlugin_CurrentSessionChanged;
             IncidentCountChanged += TelemetryComparerPlugin_IncidentCountChanged;
+            SelectedCarTrackTelemetryChanged += TelemetryComparerPlugin_SelectedCarTrackTelemetryChanged;
 
-            //Settings.CarTrackTelemetries.CollectionChanged += CarTrackTelemetries_CollectionChanged;
+            Settings.CarTrackTelemetries.CollectionChanged += CarTrackTelemetries_CollectionChanged;
             //SetPropertyChanged();
 
-
+            OnPropertyChanged(nameof(FilteredTelemetries));
         }
+
+       
+
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (!data.GameRunning)
@@ -422,7 +452,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             if (gameName == "IRacing")
             {
                 SteeringAngle = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.SteeringWheelAngle")) * -58.0;
-                IncidentCount = Convert.ToInt32(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.PlayerCarMyIncidentCount"));
+                var incidentCount = Convert.ToInt32(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.PlayerCarMyIncidentCount"));
+                if (incidentCount > IncidentCount)
+                {
+                    CurrentLapHasIncidents = true;
+                    IncidentCount = incidentCount;
+                }
             }
             else
                 SteeringAngle = null;
@@ -500,8 +535,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                             CurrentSessionBestTelemetry = SelectedCarTrackTelemetry;
                                             PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
                                         }
-                                         
-                                   
+                                        SetReferenceLap();
+
+
+
 
                                     }
                                     //if latest lap is faster than reference lap
@@ -726,7 +763,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                             PersonalBestTelemetry = GetPersonalBestTelemetry();
                             if (PersonalBestTelemetry is null)
                                 ResetReferenceLap();
-                            else if (PersonalBestTelemetry != SelectedCarTrackTelemetry)                            
+                            else                      
                                 SelectedCarTrackTelemetry = PersonalBestTelemetry;  
                         }
                         break;
@@ -740,23 +777,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         break;
                     case 2:
                         {
-                            if (SelectedBestOfFriendTelemetry != null && SelectedCarTrackTelemetry != SelectedCarTrackTelemetry)
+                            if (SelectedBestOfFriendTelemetry is null)
+                                ResetReferenceLap();
+                            else
                                 SelectedCarTrackTelemetry = SelectedBestOfFriendTelemetry;
                                                    
                         }
                         break;
                 }
-
-                if (SelectedCarTrackTelemetry != null)
-                {
-                    PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
-                    PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
-                    PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
-                    PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
-                }
-                else
-                    PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), false);
-            }
+             
+            }          
 
                 
         }
@@ -816,6 +846,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private void TelemetryComparerPlugin_CurrentSessionChanged(object sender, EventArgs e)
         {
             SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : Current session has changed");
+            IncidentCount = 0;
+            CurrentLapHasIncidents = false;
 
             if (Settings.SelectedComparisonMode.Key == 0)
                 SetReferenceLap();
@@ -826,12 +858,26 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 OnPropertyChanged(nameof(AvailableBestOfFriendTelemetries));
                 OnPropertyChanged(nameof(SelectedBestOfFriendTelemetry));
             }
+            OnPropertyChanged(nameof(FilteredTelemetries));
         }
         public event EventHandler IncidentCountChanged;
         private void TelemetryComparerPlugin_IncidentCountChanged(object sender, EventArgs e)
         {
-            if (IncidentCount > 0 && _CurrentLapTelemetry != null)
-                CurrentLapHasIncidents = true;         
+            //if (IncidentCount > 0 && _CurrentLapTelemetry != null)
+            //    CurrentLapHasIncidents = true;         
+        }
+        public event EventHandler SelectedCarTrackTelemetryChanged;
+        private void TelemetryComparerPlugin_SelectedCarTrackTelemetryChanged(object sender, EventArgs e)
+        {
+            if (SelectedCarTrackTelemetry != null)
+            {
+                PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
+                PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
+                PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
+                PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
+            }
+            else
+                PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), false);
         }
 
 
@@ -884,10 +930,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             //    this.SaveCommonSettings("GeneralSettings", Settings);
             //}
         }
-        //private void CarTrackTelemetries_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        //{
-        //    SetPropertyChanged();
-        //}
+        private void CarTrackTelemetries_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(FilteredTelemetries));
+        }
         #endregion
 
         //private void LoadMap(string file)

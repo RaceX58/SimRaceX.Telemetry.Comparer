@@ -135,39 +135,76 @@
                         Margin="20,10,0,0"
                         >
                         <TextBlock
-                            Text="Comparison reference"
-                            Width="150"
+                            Text="Comparison mode"
+                            Width="200"
                             VerticalAlignment="Center"
                         />                       
                         <ComboBox
-                            ItemsSource="{Binding Settings.ComparisonReferences}"
-                            SelectedItem="{Binding Settings.SelectedComparisonReference}"
+                            ItemsSource="{Binding Settings.ComparisonModes}"
+                            SelectedItem="{Binding Settings.SelectedComparisonMode}"
                             DisplayMemberPath="Value"  
                             Width="200"
                             />
 
 
                     </StackPanel>
+                    <!--IsPersonalBestMode-->
                     <StackPanel                        
                         Orientation="Horizontal"
                         VerticalAlignment="Top"
                         Margin="20,10,0,0"
-                        Visibility="{Binding IsManualMode, Converter={StaticResource boolToVis}}"
+                        Visibility="{Binding IsPersonalBestMode, Converter={StaticResource boolToVis}}"
                         >
                         <TextBlock
-                            Text="Reference lap"
-                            Width="150"
+                            Text="Discard invalid lap (iRacing only)"
+                            Width="200"
+                            VerticalAlignment="Center"
+                        />
+                        <styles:SHToggleButton
+                                              
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Settings.PersonalBestDiscardInvalidLap, UpdateSourceTrigger=PropertyChanged}"
+                            />
+                    </StackPanel>
+                    <!--IsSessionBestMode-->
+                    <StackPanel                        
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        Visibility="{Binding IsSessionBestMode, Converter={StaticResource boolToVis}}"
+                        >
+                        <TextBlock
+                            Text="Discard invalid lap (iRacing only)"
+                            Width="200"
+                            VerticalAlignment="Center"
+                        />
+                        <styles:SHToggleButton
+                                              
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Settings.SessionBestDiscardInvalidLap, UpdateSourceTrigger=PropertyChanged}"
+                            />
+                    </StackPanel>
+                    <StackPanel                        
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        Visibility="{Binding IsBestOfFriendMode, Converter={StaticResource boolToVis}}"
+                        >
+                        <TextBlock
+                            Text="Selected best of friend lap"
+                            Width="200"
                             VerticalAlignment="Center"
                         />
                         <ComboBox
-                            ItemsSource="{Binding AvailableManualTelemetries}"
-                            SelectedItem="{Binding SelectedManualTelemetry}"
+                            ItemsSource="{Binding AvailableBestOfFriendTelemetries}"
+                            SelectedItem="{Binding SelectedBestOfFriendTelemetry}"
                             DisplayMemberPath="FormattedPlayerNameLapTime"  
                             Width="200"
                             />
-
-
                     </StackPanel>
+                    
                 </StackPanel>
                 <StackPanel
                      Margin="40,5,10,10"
@@ -180,7 +217,7 @@
                         />
                     <ui:ControlsEditor 
                         FriendlyName="Cycle through comparison reference" 
-                        ActionName="TelemetryComparerPlugin.ResetCurrentSessionBest"
+                        ActionName="TelemetryComparerPlugin.CycleComparisonReference"
                         VerticalAlignment="Top"
                         />
                 </StackPanel>
@@ -235,7 +272,7 @@
                             <GridViewColumn DisplayMemberBinding="{Binding LapTime,StringFormat=mm\\:ss\\.fff, UpdateSourceTrigger=PropertyChanged}" Width="125" >
                                 <GridViewColumnHeader Content="Lap time" />
                             </GridViewColumn>
-                            <GridViewColumn  >
+                            <!--<GridViewColumn  >
                                 <GridViewColumnHeader Content="Use as reference lap" />
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -243,10 +280,10 @@
                                             IsChecked="{Binding UseAsReferenceLap, UpdateSourceTrigger=PropertyChanged}"
                                             IsEnabled="False"
                                             />
-                                        <!--IsEnabled="{Binding DataContext.IsManualMode, RelativeSource={RelativeSource AncestorType=UserControl}}"-->
+                                        --><!--IsEnabled="{Binding DataContext.IsBestOfFriendMode, RelativeSource={RelativeSource AncestorType=UserControl}}"--><!--
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+                            </GridViewColumn>-->
                             <GridViewColumn Width="50" >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>

@@ -16,7 +16,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private TimeSpan _LapTime;
         private string _PlayerName;
         private string _TrackCode;
-        private bool _UseAsReferenceLap;
+        //private bool _UseAsReferenceLap;
         #endregion
 
         #region Properties
@@ -55,14 +55,14 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _TrackCode; }
             set { _TrackCode = value; OnPropertyChanged(nameof(TrackCode)); }
         }
-        public bool UseAsReferenceLap
-        {
-            get { return _UseAsReferenceLap; }
-            set { _UseAsReferenceLap = value; OnPropertyChanged(nameof(UseAsReferenceLap));}
-        }
+        //public bool UseAsReferenceLap
+        //{
+        //    get { return _UseAsReferenceLap; }
+        //    set { _UseAsReferenceLap = value; OnPropertyChanged(nameof(UseAsReferenceLap));}
+        //}
         public string FormattedPlayerNameLapTime
         {
-            get { return $"{PlayerName} - {LapTime}"; }
+            get { return $"{PlayerName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
         }
         #endregion
 

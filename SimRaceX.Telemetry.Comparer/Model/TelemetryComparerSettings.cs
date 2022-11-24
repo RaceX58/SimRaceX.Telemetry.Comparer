@@ -17,13 +17,15 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private bool _ShowSpeedTrace;
         private bool _ShowGauges;
         private bool _ShowSteeringAngle;
-        private Dictionary<int, string> _ComparisonReferences = new Dictionary<int, string>()
+        private Dictionary<int, string> _ComparisonModes = new Dictionary<int, string>()
         {
-            {0,"Personal best" },
+            {0, "Personal best" },
             {1, "Session best" },
-            {2, "Manual" }
+            {2, "Best of friend" }
         };
-        private KeyValuePair<int,string> _SelectedComparisonReference;
+        private KeyValuePair<int,string> _SelectedComparisonMode;
+        private bool _PersonalBestDiscardInvalidLap;
+        private bool _SessionBestDiscardInvalidLap;
         #endregion
 
         #region Properties
@@ -57,21 +59,29 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _ShowSteeringAngle; }
             set { _ShowSteeringAngle = value; OnPropertyChanged(nameof(ShowSteeringAngle)); }
         }
-
-        public Dictionary<int, string> ComparisonReferences
+        public Dictionary<int, string> ComparisonModes
         {
-            get { return _ComparisonReferences; }
-        }
-       
-        public KeyValuePair<int, string> SelectedComparisonReference
+            get { return _ComparisonModes; }
+        }       
+        public KeyValuePair<int, string> SelectedComparisonMode
         {
-            get { return _SelectedComparisonReference; }
+            get { return _SelectedComparisonMode; }
             set 
             { 
-                _SelectedComparisonReference = value;
+                _SelectedComparisonMode = value;
                 SelectedComparisonReferenceChanged?.Invoke(this, null);
-                OnPropertyChanged(nameof(SelectedComparisonReference)); 
+                OnPropertyChanged(nameof(SelectedComparisonMode)); 
             }
+        }
+        public bool PersonalBestDiscardInvalidLap
+        {
+            get { return _PersonalBestDiscardInvalidLap; }
+            set { _PersonalBestDiscardInvalidLap = value; OnPropertyChanged(nameof(PersonalBestDiscardInvalidLap)); }
+        }
+        public bool SessionBestDiscardInvalidLap
+        {
+            get { return _SessionBestDiscardInvalidLap; }
+            set { _SessionBestDiscardInvalidLap = value; OnPropertyChanged(nameof(SessionBestDiscardInvalidLap)); }
         }
         #endregion
 

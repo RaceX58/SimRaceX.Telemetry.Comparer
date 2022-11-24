@@ -54,6 +54,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _SteeringAngle; }
             set { _SteeringAngle = value; OnPropertyChanged(nameof(SteeringAngle)); }
         }
+       
         #endregion
     }
 }

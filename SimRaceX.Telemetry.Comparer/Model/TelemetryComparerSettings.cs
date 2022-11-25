@@ -69,7 +69,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
             set 
             { 
                 _SelectedComparisonMode = value;
-                SelectedComparisonReferenceChanged?.Invoke(this, null);
+                SelectedComparisonModeChanged?.Invoke(this, null);
                 OnPropertyChanged(nameof(SelectedComparisonMode)); 
             }
         }
@@ -86,7 +86,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         #endregion
 
         #region Events
-        public event EventHandler SelectedComparisonReferenceChanged;
+        public event EventHandler SelectedComparisonModeChanged;
         #endregion
     }
 }

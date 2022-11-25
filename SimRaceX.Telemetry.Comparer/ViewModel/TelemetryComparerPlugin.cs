@@ -548,6 +548,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                                 lock (_syncLock)
                                                     //Add reference lap to list
                                                     Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
+                                                
                                             }
                                             else if (Settings.SelectedComparisonMode.Key == 1)
                                             {
@@ -752,9 +753,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         }
         public void ResetReferenceLap()
         {
-            SelectedCarTrackTelemetry = null;
+            SelectedCarTrackTelemetry = null;           
             PluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), new TimeSpan(0, 0, 0));
             PluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), "");
+            PluginManager.AddProperty("ReferenceLapSet", this.GetType(), false);
             PluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
         }
         //private void SetPropertyChanged()
@@ -774,8 +776,6 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 && PluginManager.LastData.NewData.CarModel != null 
                 && PluginManager.LastData.NewData.TrackId != null)
             {
-               
-
                 switch (Settings.SelectedComparisonMode.Key)
                 {
                     case 0:
@@ -804,11 +804,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                                    
                         }
                         break;
-                }
-             
-            }          
+                }             
+            }
+            PluginManager.AddProperty("ReferenceLapSet", this.GetType(), SelectedCarTrackTelemetry != null);
 
-                
         }
         private CarTrackTelemetry GetPersonalBestTelemetry()
         {

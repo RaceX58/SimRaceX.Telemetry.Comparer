@@ -6,8 +6,9 @@ The goal of this plugin is to help you working on your regularity.
 
 SimRaceX.Telemetry.Comparer can use your personnal best or even your friend best lap !
 
+![plugin v1 1](https://user-images.githubusercontent.com/24957190/204131487-dddfee12-582c-4d7c-8484-e29065e15495.PNG)
 
-![overlay](https://user-images.githubusercontent.com/24957190/202892710-7775669e-bd6b-40ac-98b7-9d225dea6bc8.png)
+![overlay v1 1](https://user-images.githubusercontent.com/24957190/204131463-392a56c8-33b9-4016-a3e1-2f8291df6486.png)
 
 
 ## How to use this plugin
@@ -20,3 +21,7 @@ SimRaceX.Telemetry.Comparer can use your personnal best or even your friend best
 Now you can open SimHub and activate the plugin (better check the 'Show in left main menu' so you can find it easily)
 
 Have fun !
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=43E6YJ6TMDWPN&no_recurring=0&currency_code=EUR)
+
+

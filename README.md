@@ -22,4 +22,6 @@ Now you can open SimHub and activate the plugin (better check the 'Show in left 
 
 Have fun !
 
-https://www.paypal.com/donate/?business=43E6YJ6TMDWPN&no_recurring=0&currency_code=EUR
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=43E6YJ6TMDWPN&no_recurring=0&currency_code=EUR)
+
+

@@ -21,3 +21,5 @@ SimRaceX.Telemetry.Comparer can use your personnal best or even your friend best
 Now you can open SimHub and activate the plugin (better check the 'Show in left main menu' so you can find it easily)
 
 Have fun !
+
+https://www.paypal.com/donate/?business=43E6YJ6TMDWPN&no_recurring=0&currency_code=EUR

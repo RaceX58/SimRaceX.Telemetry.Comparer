@@ -61,6 +61,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private bool _CurrentLapHasIncidents;
         private bool _FilterTelemetries;
         private int _IsInpit = 1;
+        private string _SessionTypeName;
         #endregion
 
         #region Properties
@@ -101,7 +102,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             get { return _CurrentSessionBestTelemetry; }
             set
             {
-                _CurrentSessionBestTelemetry = value;             
+                _CurrentSessionBestTelemetry = value;
+                PluginManager.SetPropertyValue("CurrentSessionBestLapTime", this.GetType(), _CurrentSessionBestTelemetry is null ? new TimeSpan(0,0,0) : _CurrentSessionBestTelemetry.LapTime);
                 OnPropertyChanged(nameof(CurrentSessionBestTelemetry));
             }
         }
@@ -111,6 +113,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             set
             {
                 _PersonalBestTelemetry = value;
+                PluginManager.SetPropertyValue("PersonalBestLapTime", this.GetType(), _PersonalBestTelemetry is null ? new TimeSpan(0, 0, 0) : _PersonalBestTelemetry.LapTime);
                 OnPropertyChanged(nameof(PersonalBestTelemetry));
             }
         }
@@ -353,18 +356,18 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         }
         public bool ExportCarTrackTelemetryCanExecute()
         {
-            return _SelectedCarTrackTelemetry != null;
+            return _SelectedViewTelemetry != null;
         }
         public void ExportCarTrackTelemetryExecuted()
         {
             string exportDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Exports");
             if (!Directory.Exists(exportDir))
                 Directory.CreateDirectory(exportDir);
-            string fileName = System.IO.Path.Combine(exportDir, $"{_SelectedCarTrackTelemetry.PlayerName}_{_SelectedCarTrackTelemetry.TrackName}_{_SelectedCarTrackTelemetry.CarName}.json");
+            string fileName = System.IO.Path.Combine(exportDir, $"{_SelectedViewTelemetry.PlayerName}_{_SelectedViewTelemetry.TrackName}_{_SelectedViewTelemetry.CarName}.json");
             using (StreamWriter file = File.CreateText(fileName))
             {
                 JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(file, _SelectedCarTrackTelemetry);
+                serializer.Serialize(file, _SelectedViewTelemetry);
             }
             Process.Start(exportDir);
 
@@ -451,11 +454,169 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             SelectedCarTrackTelemetryChanged += TelemetryComparerPlugin_SelectedCarTrackTelemetryChanged;
             IsInPitChanged += TelemetryComparerPlugin_IsInPitChanged;
 
-          
+
+            pluginManager.NewLap += PluginManager_NewLap;
+
             //SetPropertyChanged();
 
             OnPropertyChanged(nameof(FilteredTelemetries));
         }
+
+        private void PluginManager_NewLap(int completedLapNumber, bool testLap, PluginManager manager, ref GameData data)
+        {
+           
+            //Check the current lap telemetry is valid
+            if (_CurrentLapTelemetry != null && _CurrentLapTelemetry.Count > 0 && IsCurrentLapValid)
+            {
+                double firstDataDistance = _CurrentLapTelemetry.First().LapDistance;
+                double lastDataDistance = _CurrentLapTelemetry.Last().LapDistance;
+                //Try to check if a complete lap has be done
+                if (firstDataDistance < 0.1 && lastDataDistance > 0.9 && data.OldData.IsLapValid)
+                {
+                    var latestLapTelemetry = new CarTrackTelemetry
+                    {
+                        GameName = manager.GameName,
+                        CarName = data.NewData.CarModel,
+                        TrackName = data.NewData.TrackName,
+                        PlayerName = data.NewData.PlayerName,
+                        TrackCode = data.NewData.TrackCode,
+                        LapTime = data.NewData.LastLapTime,
+                        TelemetryDatas = _CurrentLapTelemetry
+                    };
+
+                    //If no reference lap is set, set current lap as reference lap
+                    //bool referenceLapExist = SelectedCarTrackTelemetry != null;
+
+                    //if (CurrentSessionBestTelemetry is null)
+                    //    CurrentSessionBestTelemetry = latestLapTelemetry;
+                    //if (PersonalBestTelemetry is null)
+                    //{
+                    //    PersonalBestTelemetry = latestLapTelemetry;
+
+                    //    lock (_syncLock)
+                    //        //Add reference lap to list
+                    //        Settings.CarTrackTelemetries.Add(latestLapTelemetry);
+                    //    //PersonalBestTelemetry = GetPersonalBestTelemetry();
+                    //    //if (GetPersonalBestTelemetry() is null)
+                    //    //{
+
+                    //    //}
+                    //}
+
+                    //if (!referenceLapExist)
+                    //{
+                    //    if (Settings.SelectedComparisonMode.Key < 2)
+                    //        SetReferenceLap();
+                    //}
+                    //if latest lap is faster than personal best
+                    bool isLatestLapFaster = false;
+
+                    if (latestLapTelemetry.LapTime.TotalMilliseconds == 0) return;
+
+                    if (PersonalBestTelemetry is null || latestLapTelemetry.LapTime.TotalMilliseconds < PersonalBestTelemetry.LapTime.TotalMilliseconds)
+                    {
+                        isLatestLapFaster = true;
+                        if (PersonalBestTelemetry is null)
+                        {
+                            PersonalBestTelemetry = latestLapTelemetry;
+                            lock (_syncLock)
+                                //Add reference lap to list
+                                Settings.CarTrackTelemetries.Add(latestLapTelemetry);
+                        }
+                            
+                        else
+                        {
+                         
+
+                          
+                            var personalBest = GetPersonalBestTelemetry();
+                            personalBest.TelemetryDatas = latestLapTelemetry.TelemetryDatas;
+                            personalBest.LapTime = latestLapTelemetry.LapTime;
+                            PersonalBestTelemetry = latestLapTelemetry;
+                        }
+                    
+                        //Save reference lap
+                        this.SaveCommonSettings("GeneralSettings", Settings);
+                        SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : New personal best set");
+                    }
+                    if (CurrentSessionBestTelemetry is null || latestLapTelemetry.LapTime.TotalMilliseconds < CurrentSessionBestTelemetry.LapTime.TotalMilliseconds)
+                    {
+                        isLatestLapFaster = true;
+                        CurrentSessionBestTelemetry = latestLapTelemetry;
+                    }                     
+
+                    if (isLatestLapFaster)
+                    {
+                        manager.SetPropertyValue("ReferenceLapTime", this.GetType(), latestLapTelemetry.LapTime);
+                        manager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), latestLapTelemetry.PlayerName);
+                        manager.TriggerEvent("ReferenceLapChanged", this.GetType());
+
+                        if (Settings.SelectedComparisonMode.Key < 2)
+                            SetReferenceLap();
+                    }
+
+
+
+                    ////if latest lap is faster than reference lap
+                    //if (SelectedCarTrackTelemetry.LapTime.TotalSeconds == 0
+                    //||
+                    //SelectedCarTrackTelemetry.LapTime.TotalMilliseconds > latestLapTelemetry.LapTime.TotalMilliseconds
+                    //)
+                    //{
+                    //    //Update reference lap telemetry
+                    //    SelectedCarTrackTelemetry.LapTime = latestLapTelemetry.la;
+                    //    SelectedCarTrackTelemetry.TelemetryDatas = _CurrentLapTelemetry;
+
+                    //    //if we use personal best
+                    //    if (Settings.SelectedComparisonMode.Key == 0)
+                    //    {
+                    //        //Save reference lap
+                    //        this.SaveCommonSettings("GeneralSettings", Settings);
+                    //        SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : New personal best set");
+                    //    }
+                    //    //else if we use session best
+                    //    else if (Settings.SelectedComparisonMode.Key == 1)
+                    //    {
+
+                    //        //try to get the personal best
+                    //        var personalBest = GetPersonalBestTelemetry();
+                    //        //if personal best is null
+                    //        if (personalBest is null)
+                    //        {
+                    //            lock (_syncLock)
+                    //                //Add reference lap to list
+                    //                Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
+                    //        }
+                    //        //else if session best is faster that personal best
+                    //        else if (personalBest.LapTime.TotalSeconds == 0
+                    //            ||
+                    //            personalBest.LapTime.TotalMilliseconds > data.OldData.CurrentLapTime.TotalMilliseconds)
+                    //        {
+                    //            personalBest.LapTime = data.NewData.LastLapTime;
+                    //            personalBest.TelemetryDatas = _CurrentLapTelemetry;
+                    //            //update reference lap
+                    //            this.SaveCommonSettings("GeneralSettings", Settings);
+                    //        }
+                    //    }
+
+
+
+                    //    //if (Settings.SelectedComparisonReference.Key == 0)
+                    //    //{
+                    //    //    //Task.Run(() => GetSelectedCarTrackTelemetryDatas(false));
+                    //    //    SelectedCarTrackTelemetry.LapTime = data.OldData.CurrentLapTime;
+                    //    //    this.SaveCommonSettings("GeneralSettings", Settings);
+                    //    //}                                       
+                    //    manager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
+                    //    manager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
+                    //    manager.TriggerEvent("ReferenceLapChanged", this.GetType());
+                    //}
+                }
+            }
+            ResetCurrentLapTelemetry();
+            
+        }
+
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (!data.GameRunning)
@@ -495,13 +656,22 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
                 if (data.GameName != null && data.NewData.CarModel != null && data.NewData.TrackId != null)
                 {
+                    if (_SessionTypeName is null)
+                        _SessionTypeName = data.NewData.SessionTypeName;
+                    else if (_SessionTypeName != data.NewData.SessionTypeName)
+                    {
+                        _SessionTypeName = data.NewData.SessionTypeName;
+                        InitSession();
+                    }
+
+
                     //If not reference lap loaded, try to load a reference lap
                     if (SelectedCarTrackTelemetry is null && IsInpit == 0)
                         SetReferenceLap();
 
+
                     //Main loop
-                    if (data.OldData.CurrentLap != data.NewData.CurrentLap
-                        || tickCount == (SimHub.Licensing.LicenseManager.IsValid ? 3 : 0))
+                    if (tickCount == (SimHub.Licensing.LicenseManager.IsValid ? 3 : 0))
                     {
                         IsInpit = data.NewData.IsInPit;
 
@@ -519,121 +689,25 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                 )
                                 //try to load a reference lap
                                 SetReferenceLap();
-                            //If current lap has changed
-                            if (data.OldData.CurrentLap != data.NewData.CurrentLap)
-                            {
-                                //Check the current lap telemetry is valid
-                                if (_CurrentLapTelemetry != null && _CurrentLapTelemetry.Count > 0 && IsCurrentLapValid)
-                                {
-                                    double firstDataDistance = _CurrentLapTelemetry.First().LapDistance;
-                                    double lastDataDistance = _CurrentLapTelemetry.Last().LapDistance;
-                                    //Try to check if a complete lap has be done
-                                    if (firstDataDistance < 0.1 && lastDataDistance > 0.9 && data.OldData.IsLapValid)
-                                    {
-                                        //If no reference lap is set, set current lap as reference lap
-                                        if (SelectedCarTrackTelemetry is null)
-                                        {
-                                            _SelectedCarTrackTelemetry = new CarTrackTelemetry
-                                            {
-                                                GameName = gameName,
-                                                CarName = carModel,
-                                                TrackName = trackName,
-                                                PlayerName = playerName,
-                                                TrackCode = trackCode,
-
-                                            };
-                                            //if we use personal best
-                                            if (Settings.SelectedComparisonMode.Key == 0)
-                                            {
-                                                lock (_syncLock)
-                                                    //Add reference lap to list
-                                                    Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
-                                                
-                                            }
-                                            else if (Settings.SelectedComparisonMode.Key == 1)
-                                            {
-                                                CurrentSessionBestTelemetry = SelectedCarTrackTelemetry;
-                                                PluginManager.SetPropertyValue("ReferenceLapSet", this.GetType(), true);
-                                            }
-                                            SetReferenceLap();
-
-
-
-
-                                        }
-                                        //if latest lap is faster than reference lap
-                                        if (SelectedCarTrackTelemetry.LapTime.TotalSeconds == 0
-                                            ||
-                                            SelectedCarTrackTelemetry.LapTime.TotalMilliseconds > data.OldData.CurrentLapTime.TotalMilliseconds
-                                            )
-                                        {
-                                            //Update reference lap telemetry
-                                            SelectedCarTrackTelemetry.LapTime = data.OldData.CurrentLapTime;
-                                            SelectedCarTrackTelemetry.TelemetryDatas = _CurrentLapTelemetry;
-                                            //if we use personal best
-                                            if (Settings.SelectedComparisonMode.Key == 0)
-                                            {
-                                                //Save reference lap
-                                                this.SaveCommonSettings("GeneralSettings", Settings);
-                                                SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : New personal best set");
-                                            }
-                                            //else if we use session best
-                                            else if (Settings.SelectedComparisonMode.Key == 1)
-                                            {
-
-                                                //try to get the personal best
-                                                var personalBest = GetPersonalBestTelemetry();
-                                                //if personal best is null
-                                                if (personalBest is null)
-                                                {
-                                                    lock (_syncLock)
-                                                        //Add reference lap to list
-                                                        Settings.CarTrackTelemetries.Add(SelectedCarTrackTelemetry);
-                                                }
-                                                //else if session best is faster that personal best
-                                                else if (personalBest.LapTime.TotalSeconds == 0
-                                                    ||
-                                                    personalBest.LapTime.TotalMilliseconds > data.OldData.CurrentLapTime.TotalMilliseconds)
-                                                {
-                                                    personalBest.LapTime = data.OldData.CurrentLapTime;
-                                                    personalBest.TelemetryDatas = _CurrentLapTelemetry;
-                                                    //update reference lap
-                                                    this.SaveCommonSettings("GeneralSettings", Settings);
-                                                }
-                                            }
-
-
-
-                                            //if (Settings.SelectedComparisonReference.Key == 0)
-                                            //{
-                                            //    //Task.Run(() => GetSelectedCarTrackTelemetryDatas(false));
-                                            //    SelectedCarTrackTelemetry.LapTime = data.OldData.CurrentLapTime;
-                                            //    this.SaveCommonSettings("GeneralSettings", Settings);
-                                            //}                                       
-                                            pluginManager.SetPropertyValue("ReferenceLapTime", this.GetType(), SelectedCarTrackTelemetry.LapTime);
-                                            pluginManager.SetPropertyValue("ReferenceLapPlayerName", this.GetType(), SelectedCarTrackTelemetry.PlayerName);
-                                            pluginManager.TriggerEvent("ReferenceLapChanged", this.GetType());
-                                        }
-                                    }
-                                }
-                                ResetCurrentLapTelemetry();
-                            }
-                            else if (_CurrentLapTelemetry is null)
+                      
+                            if (_CurrentLapTelemetry is null)
                                 ResetCurrentLapTelemetry();
 
                             //Add data to current lap telemetry
                             if (data.NewData.CurrentLapTime.TotalMilliseconds > 0)
                             {
-                                _CurrentLapTelemetry.Add(new TelemetryData
-                                {
-                                    Throttle = data.NewData.Throttle,
-                                    Brake = data.NewData.Brake,
-                                    Clutch = data.NewData.Clutch,
-                                    LapDistance = data.NewData.CarCoordinates[0],
-                                    Speed = data.NewData.SpeedKmh,
-                                    Gear = data.NewData.Gear,
-                                    SteeringAngle = SteeringAngle,
-                                });
+                                if (_CurrentLapTelemetry.Count == 0 || _CurrentLapTelemetry.Last().LapDistance < data.NewData.CarCoordinates[0])
+                                    _CurrentLapTelemetry.Add(new TelemetryData
+                                    {
+                                        Throttle = data.NewData.Throttle,
+                                        Brake = data.NewData.Brake,
+                                        Clutch = data.NewData.Clutch,
+                                        LapDistance = data.NewData.CarCoordinates[0],
+                                        Speed = data.NewData.SpeedKmh,
+                                        Gear = data.NewData.Gear,
+                                        SteeringAngle = SteeringAngle,
+                                        LapTime = data.NewData.CurrentLapTime
+                                    });
 
                             }
                             //if a reference lap is set
@@ -669,6 +743,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                 if (index > -1)
                                 {
                                     TelemetryData telemetryData = SelectedCarTrackTelemetry.TelemetryDatas[index];
+                                    if (telemetryData.LapTime.Equals(default) == false)
+                                    {
+                                        var delta = data.NewData.CurrentLapTime - telemetryData.LapTime;
+                                        pluginManager.SetPropertyValue("ReferenceLapDeltaTime", this.GetType(), delta);
+                                    }
+                                   
                                     pluginManager.SetPropertyValue("ReferenceLapThrottle", this.GetType(), telemetryData.Throttle);
                                     pluginManager.SetPropertyValue("ReferenceLapBrake", this.GetType(), telemetryData.Brake);
                                     pluginManager.SetPropertyValue("ReferenceLapClutch", this.GetType(), telemetryData.Clutch);
@@ -735,6 +815,9 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             PluginManager.AddProperty("ReferenceLapSet", this.GetType(), false);
             PluginManager.AddProperty("PersonalBestDiscardInvalidLap", this.GetType(), Settings.PersonalBestDiscardInvalidLap);
             PluginManager.AddProperty("SessionBestDiscardInvalidLap", this.GetType(), Settings.SessionBestDiscardInvalidLap);
+            PluginManager.AddProperty("ReferenceLapDeltaTime", this.GetType(), new TimeSpan(0, 0, 0));
+            PluginManager.AddProperty("PersonalBestLapTime", this.GetType(), new TimeSpan(0, 0, 0));
+            PluginManager.AddProperty("CurrentSessionBestLapTime", this.GetType(), new TimeSpan(0, 0, 0));
         }
         void InitSimHubEvents()
         {
@@ -797,10 +880,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         break;
                     case 2:
                         {
+                            if (AvailableBestOfFriendTelemetries.Count() == 1)
+                                _SelectedBestOfFriendTelemetry = AvailableBestOfFriendTelemetries[0];
                             if (SelectedBestOfFriendTelemetry is null)
                                 ResetReferenceLap();
                             else
                                 SelectedCarTrackTelemetry = SelectedBestOfFriendTelemetry;
+                            OnPropertyChanged(nameof(SelectedBestOfFriendTelemetry));
                                                    
                         }
                         break;
@@ -858,27 +944,26 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             _CurrentLapTelemetry = new List<TelemetryData>();
             CurrentLapHasIncidents = false;
         }
-        #endregion
-
-        #region Events
-        public event EventHandler CurrentSessionChanged;
-        private void TelemetryComparerPlugin_CurrentSessionChanged(object sender, EventArgs e)
+        void InitSession()
         {
             SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : Current session has changed");
             IncidentCount = 0;
             CurrentLapHasIncidents = false;
             IsInpit = 1;
 
-            if (Settings.SelectedComparisonMode.Key == 0)
-                SetReferenceLap();
-            else if (Settings.SelectedComparisonMode.Key == 1)
-                ResetCurrentSessionBest();
-            else if (Settings.SelectedComparisonMode.Key == 2)
-            {
-                OnPropertyChanged(nameof(AvailableBestOfFriendTelemetries));
-                OnPropertyChanged(nameof(SelectedBestOfFriendTelemetry));
-            }
+            PersonalBestTelemetry = GetPersonalBestTelemetry();
+            CurrentSessionBestTelemetry = null;
+            OnPropertyChanged(nameof(AvailableBestOfFriendTelemetries));
+            SetReferenceLap();
             OnPropertyChanged(nameof(FilteredTelemetries));
+        }
+        #endregion
+
+        #region Events
+        public event EventHandler CurrentSessionChanged;
+        private void TelemetryComparerPlugin_CurrentSessionChanged(object sender, EventArgs e)
+        {
+            InitSession();
         }
         public event EventHandler IncidentCountChanged;
         private void TelemetryComparerPlugin_IncidentCountChanged(object sender, EventArgs e)
@@ -902,9 +987,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         public event EventHandler IsInPitChanged;
         private void TelemetryComparerPlugin_IsInPitChanged(object sender, EventArgs e)
         {
-            if (IsInpit == 1)            
-                ResetReferenceLap();
-            else            
+            //if (IsInpit == 1)            
+            //    ResetReferenceLap();
+            //else
+            if (IsInpit == 0)  
                 ResetCurrentLapTelemetry(); 
         }
 

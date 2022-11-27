@@ -327,22 +327,24 @@
                 </ListView>
             </StackPanel>
         </styles:SHSection>
-        <styles:SHSection
-            Grid.Row="2"
-            Title="Telemetry">
+        <styles:SHSection           
+            Title="Telemetry"
+            Grid.Row="3"
+            >
+
             <oxy:Plot  
-                x:Name="plot"
-                Grid.Column="1" 
-                VerticalAlignment="Top" 
-                Background="#00FFFFFF" 
-                Margin="-8,-6,0,-8" 
-                BorderThickness="1"
-                IsMouseWheelEnabled="False" 
-                PlotAreaBorderThickness="0,0,0,1" 
-                PlotAreaBorderColor="{DynamicResource BlackColor}" 
-                Height="200" 
-                PreviewMouseDown="plot_PreviewMouseDown"
-                >
+                    x:Name="plot"
+                   
+                    VerticalAlignment="Top" 
+                    Background="#00FFFFFF" 
+                    Margin="-8,-6,0,-8" 
+                    BorderThickness="1"
+                    IsMouseWheelEnabled="False" 
+                    PlotAreaBorderThickness="0,0,0,1" 
+                    PlotAreaBorderColor="{DynamicResource BlackColor}" 
+                    Height="200" 
+                    PreviewMouseDown="plot_PreviewMouseDown"
+                    >
                 <oxy:Plot.DefaultTrackerTemplate>
                     <ControlTemplate>
                         <oxy:TrackerControl 
@@ -350,9 +352,9 @@
                             LineStroke="Red"                           
                             HorizontalLineVisibility="Collapsed"
                             >
-                           
+
                         </oxy:TrackerControl>
-                      
+
                     </ControlTemplate>
                 </oxy:Plot.DefaultTrackerTemplate>
                 <!--<oxy:Plot.Annotations>
@@ -380,8 +382,68 @@
                 </oxy:Plot.Axes>
             </oxy:Plot>
         </styles:SHSection>
-        <!--<styles:SHSection
+        <!--<Grid
             Grid.Row="3"
+            >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <styles:SHSection           
+                Title="Telemetry">
+
+                <oxy:Plot  
+                    x:Name="plot"
+                   
+                    VerticalAlignment="Top" 
+                    Background="#00FFFFFF" 
+                    Margin="-8,-6,0,-8" 
+                    BorderThickness="1"
+                    IsMouseWheelEnabled="False" 
+                    PlotAreaBorderThickness="0,0,0,1" 
+                    PlotAreaBorderColor="{DynamicResource BlackColor}" 
+                    Height="200" 
+                    PreviewMouseDown="plot_PreviewMouseDown"
+                    >
+                    <oxy:Plot.DefaultTrackerTemplate>
+                        <ControlTemplate>
+                            <oxy:TrackerControl 
+                            Position="{Binding Position}" 
+                            LineStroke="Red"                           
+                            HorizontalLineVisibility="Collapsed"
+                            >
+
+                            </oxy:TrackerControl>
+
+                        </ControlTemplate>
+                    </oxy:Plot.DefaultTrackerTemplate>
+                    --><!--<oxy:Plot.Annotations>
+                    <oxy:LineAnnotation
+                        Type="Vertical"
+                        X="0.2"                       
+                        />
+                </oxy:Plot.Annotations>--><!--
+                    <oxy:Plot.Series>
+                        <oxy:LineSeries 
+                        BorderThickness="0" 
+                        Color="#4CAF50" 
+                        ItemsSource="{Binding Path=ThrottleLineSeries}"
+                    
+                        />
+                        <oxy:LineSeries 
+                        BorderThickness="0" 
+                        Color="#F44336" 
+                        ItemsSource="{Binding Path=BrakeLineSeries}" />
+                    </oxy:Plot.Series>
+                    <oxy:Plot.Axes>
+                        <oxy:LinearAxis IsAxisVisible="True" Position="Bottom" FontSize="8" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" Opacity="0.5" TicklineColor="{DynamicResource BlackColor}" MajorStep="20" MajorGridlineColor="#4497BCC1" />
+                        <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="Transparent" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MajorGridlineStyle="Dot" MajorStep="20" MajorGridlineThickness="1" Minimum="0" Maximum="105" />
+                        <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MinorStep="50" MajorStep="50" Minimum="0" Maximum="105" />
+                    </oxy:Plot.Axes>
+                </oxy:Plot>
+            </styles:SHSection>
+            <styles:SHSection
+            Grid.Column="1"
             Title="Map">
             <paz:ZoomBorder 
                 Name="ZoomBorder"               
@@ -400,7 +462,10 @@
             </paz:ZoomBorder>
 
 
-        </styles:SHSection>-->
+        </styles:SHSection>
+        </Grid>-->
+        
+      
     </Grid>
  
   

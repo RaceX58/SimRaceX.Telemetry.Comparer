@@ -6,6 +6,8 @@ The goal of this plugin is to help you working on your regularity.
 
 SimRaceX.Telemetry.Comparer can use your personnal best or even your friend best lap !
 
+![plugin v1 1](https://user-images.githubusercontent.com/24957190/204131487-dddfee12-582c-4d7c-8484-e29065e15495.PNG)
+
 ![overlay v1 1](https://user-images.githubusercontent.com/24957190/204131463-392a56c8-33b9-4016-a3e1-2f8291df6486.png)
 
 

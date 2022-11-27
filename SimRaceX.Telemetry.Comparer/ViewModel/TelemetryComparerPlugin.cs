@@ -852,7 +852,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         this.SaveCommonSettings("GeneralSettings", Settings);
                         SimHub.Logging.Current.Info("SimRaceX.Telemetry.Comparer : New personal best set");
                     }
-                    if (CurrentSessionBestTelemetry is null || latestLapTelemetry.LapTime.TotalMilliseconds < CurrentSessionBestTelemetry.LapTime.TotalMilliseconds)
+                    if (CurrentSessionBestTelemetry is null || CurrentSessionBestTelemetry.LapTime.TotalMilliseconds == 0 || latestLapTelemetry.LapTime.TotalMilliseconds < CurrentSessionBestTelemetry.LapTime.TotalMilliseconds)
                     {
                         isLatestLapFaster = true;
                         CurrentSessionBestTelemetry = latestLapTelemetry;

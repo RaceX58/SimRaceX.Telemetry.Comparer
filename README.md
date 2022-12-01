@@ -2,13 +2,14 @@
 
 SimRaceX.Telemetry.Comparer is a SimHub plugin that allow you to compare your inputs versus a reference lap.
 
-The goal of this plugin is to help you working on your regularity.
+The goal of this plugin is to help you working on your regularity or compare yourself to a friend.
 
 SimRaceX.Telemetry.Comparer provides 3 comparision modes :
 
 - Personal best
 - Session best
 - Best of friend
+
 
 ![plugin v1 1](https://user-images.githubusercontent.com/24957190/204131487-dddfee12-582c-4d7c-8484-e29065e15495.PNG)
 

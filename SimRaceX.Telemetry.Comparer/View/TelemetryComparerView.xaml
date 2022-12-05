@@ -23,6 +23,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <styles:SHSection
            Grid.Row="0"
@@ -220,6 +221,11 @@
                         ActionName="TelemetryComparerPlugin.CycleComparisonReference"
                         VerticalAlignment="Top"
                         />
+                    <ui:ControlsEditor 
+                        FriendlyName="Cycle through best of friend laps" 
+                        ActionName="TelemetryComparerPlugin.CycleBestOfFriendLaps"
+                        VerticalAlignment="Top"
+                        />
                 </StackPanel>
                
 
@@ -287,6 +293,9 @@
                             </GridViewColumn>
                             <GridViewColumn DisplayMemberBinding="{Binding TrackName, UpdateSourceTrigger=PropertyChanged}" Width="250">
                                 <GridViewColumnHeader Content="Track" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Type, UpdateSourceTrigger=PropertyChanged}" Width="250">
+                                <GridViewColumnHeader Content="Type" />
                             </GridViewColumn>
                             <GridViewColumn DisplayMemberBinding="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}" Width="200">
                                 <GridViewColumnHeader Content="Player name" />
@@ -382,6 +391,12 @@
                 </oxy:Plot.Axes>
             </oxy:Plot>
         </styles:SHSection>
+        <TextBlock
+            Grid.Row="4"
+            Text="v1.4"
+            HorizontalAlignment="Right"
+            Margin="10"
+            />
         <!--<Grid
             Grid.Row="3"
             >

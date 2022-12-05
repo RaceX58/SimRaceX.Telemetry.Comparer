@@ -17,6 +17,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private string _Gear;
         private double? _SteeringAngle;
         private TimeSpan _LapTime;
+        
         #endregion
 
         #region Properties
@@ -60,6 +61,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
             get { return _LapTime; }
             set { _LapTime = value; OnPropertyChanged(nameof(LapTime)); }
         }
+      
         #endregion
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +17,8 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private TimeSpan _LapTime;
         private string _PlayerName;
         private string _TrackCode;
+        private string _Type;
+        private DateTime? _Created;
         //private bool _UseAsReferenceLap;
         #endregion
 
@@ -63,6 +66,16 @@ namespace SimRaceX.Telemetry.Comparer.Model
         public string FormattedPlayerNameLapTime
         {
             get { return $"{PlayerName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
+        }
+        public string Type
+        {
+            get { return _Type; }
+            set { _Type = value; OnPropertyChanged(nameof(Type)); }
+        }
+        public DateTime? Created
+        {
+            get { return _Created; }
+            set { _Created = value; OnPropertyChanged(nameof(Created)); }
         }
         #endregion
 

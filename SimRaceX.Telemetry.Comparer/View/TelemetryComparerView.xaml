@@ -467,7 +467,7 @@
         </styles:SHSection>
         <TextBlock
             Grid.Row="4"
-            Text="v1.4"
+            Text="{Binding Version}"
             HorizontalAlignment="Right"
             Margin="10"
             />

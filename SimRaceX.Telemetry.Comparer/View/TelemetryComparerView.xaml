@@ -388,7 +388,7 @@
                     >
                     <TextBlock
                         Margin="0,0,0,0"
-                        Text="Comparaison lap"
+                        Text="Comparison lap"
                         VerticalAlignment="Center"
                         />
                     <ComboBox

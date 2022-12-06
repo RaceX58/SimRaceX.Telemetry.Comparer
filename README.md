@@ -1,5 +1,7 @@
 # SimRaceX.Telemetry.Comparer
 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=43E6YJ6TMDWPN&no_recurring=0&currency_code=EUR)
+
 SimRaceX.Telemetry.Comparer is a SimHub plugin that allow you to compare your inputs versus a reference lap.
 
 The goal of this plugin is to help you working on your regularity or compare yourself to a friend.

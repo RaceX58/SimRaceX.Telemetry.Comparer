@@ -67,6 +67,10 @@ namespace SimRaceX.Telemetry.Comparer.Model
         {
             get { return $"{PlayerName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
         }
+        public string FormattedPlayerNameCarLapTime
+        {
+            get { return $"{PlayerName} - {CarName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
+        }
         public string Type
         {
             get { return _Type; }

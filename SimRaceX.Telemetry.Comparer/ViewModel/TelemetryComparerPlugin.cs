@@ -54,14 +54,21 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private PlotModel _TelemetryPlotModel;
         private ObservableCollection<DataPoint> _ThrottleLineSeries;
         private ObservableCollection<DataPoint> _BrakeLineSeries;
+        private ObservableCollection<DataPoint> _ThrottleComparisonLineSeries;
+        private ObservableCollection<DataPoint> _BrakeComparisonLineSeries;
         private Guid _CurrentSessionId;
         private double? _SteeringAngle;
         private int _IncidentCount;
         private CarTrackTelemetry _SelectedViewTelemetry;
         private bool _CurrentLapHasIncidents;
-        private bool _FilterTelemetries;
+        private bool _FilterCurrentGameTrackCarTelemetries;
         private int _IsInpit = 1;
         private string _SessionTypeName;
+        private string _SelectedFilteredGame = "";
+        private string _SelectedFilteredTrack = "";
+        private string _SelectedFilteredCar = "";
+        private CollectionView _FilteredView;
+        private CarTrackTelemetry _SelectedComparisonTelemetry;
         #endregion
 
         #region Properties
@@ -89,11 +96,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             set
             {
                 _SelectedViewTelemetry = value;
+                OnPropertyChanged(nameof(AvailableComparisonTelemetries));
                 if (_SelectedViewTelemetry != null)
                 {
                     GetSelectedViewTelemetryDatas(true);
                 }
                 OnPropertyChanged(nameof(SelectedViewTelemetry));
+             
             }
         }
 
@@ -132,6 +141,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         {
             get { return _BrakeLineSeries; }
             set { _BrakeLineSeries = value; OnPropertyChanged(nameof(BrakeLineSeries)); }
+        }
+        public ObservableCollection<DataPoint> ThrottleComparisonLineSeries
+        {
+            get { return _ThrottleComparisonLineSeries; }
+            set { _ThrottleComparisonLineSeries = value; OnPropertyChanged(nameof(ThrottleComparisonLineSeries)); }
+        }
+        public ObservableCollection<DataPoint> BrakeComparisonLineSeries
+        {
+            get { return _BrakeComparisonLineSeries; }
+            set { _BrakeComparisonLineSeries = value; OnPropertyChanged(nameof(BrakeComparisonLineSeries)); }
         }
         public Guid CurrentSessionId
         {
@@ -247,29 +266,27 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 return true;
             }
         }
-        public bool FilterTelemetries
+        public bool FilterCurrentGameTrackCarTelemetries
         {
-            get { return _FilterTelemetries; }
-            set { _FilterTelemetries = value; OnPropertyChanged(nameof(FilterTelemetries)); OnPropertyChanged(nameof(FilteredTelemetries)); }
+            get { return _FilterCurrentGameTrackCarTelemetries; }
+            set 
+            {
+                _FilterCurrentGameTrackCarTelemetries = value;
+                SetFilters();
+                OnPropertyChanged(nameof(FilterCurrentGameTrackCarTelemetries));
+            
+            }
         }
         public List<CarTrackTelemetry> FilteredTelemetries
         {
             get
             {
-                if (_FilterTelemetries && PluginManager.LastData != null && PluginManager.LastData.NewData != null)
-                {
-
-                    string gameName = PluginManager.LastData.GameName;
-                    string carModel = PluginManager.LastData.NewData.CarModel;
-                    string trackCode = PluginManager.LastData.NewData.TrackCode;
-                    return _Settings.CarTrackTelemetries.Where(x =>
-                                   x.GameName == gameName
-                                   && x.TrackCode == trackCode
-                                   && x.CarName == carModel
-                                   ).ToList();
-                }
-                else
-                    return _Settings.CarTrackTelemetries.ToList();
+                return _Settings.CarTrackTelemetries.Where(x =>
+                    x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0
+                    && x.TrackCode.IndexOf(SelectedFilteredTrack, StringComparison.OrdinalIgnoreCase) >= 0
+                    && x.CarName.IndexOf(SelectedFilteredCar, StringComparison.OrdinalIgnoreCase) >= 0
+                    ).ToList();
+                
             }
         }
         public int IsInpit
@@ -282,6 +299,112 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 _IsInpit = value;
                 IsInPitChanged?.Invoke(this, null);
                 OnPropertyChanged(nameof(IsInpit)); 
+            }
+        }
+        public List<string> FilteredGames
+        {
+            get 
+            {
+                var values = new List<string>();
+                values.Add("");
+                var items = _Settings.CarTrackTelemetries.Select(x => x.GameName).Distinct().ToList();
+                items.Sort();
+                foreach (var item in items)
+                    values.Add(item);
+                return values;
+            }
+        }
+        public string SelectedFilteredGame
+        {
+            get { return _SelectedFilteredGame; }
+            set
+            {
+                _SelectedFilteredGame = value;
+                OnPropertyChanged(nameof(SelectedFilteredGame));
+                OnPropertyChanged(nameof(FilteredTelemetries));
+            }
+        }
+        public List<string> FilteredTracks
+        {
+            get
+            {
+                var values = new List<string>();
+                values.Add("");
+                var items = _Settings.CarTrackTelemetries.Where(x=>x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.TrackCode).Distinct().ToList();
+                items.Sort();
+                foreach (var item in items)
+                    values.Add(item);
+                return values;
+            }
+        }
+        public string SelectedFilteredTrack
+        {
+            get { return _SelectedFilteredTrack; }
+            set
+            {
+                _SelectedFilteredTrack = value;
+                OnPropertyChanged(nameof(SelectedFilteredTrack));
+                OnPropertyChanged(nameof(FilteredTelemetries));
+            }
+        }
+        public List<string> FilteredCars
+        {
+            get
+            {
+                var values = new List<string>();
+                values.Add("");
+                var items = _Settings.CarTrackTelemetries.Where(x => x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.CarName).Distinct().ToList();
+                items.Sort();
+                foreach (var item in items)
+                    values.Add(item);
+                return values;
+            }
+        }
+        public string SelectedFilteredCar
+        {
+            get { return _SelectedFilteredCar; }
+            set
+            {
+                _SelectedFilteredCar = value;
+                OnPropertyChanged(nameof(SelectedFilteredCar));
+                OnPropertyChanged(nameof(FilteredTelemetries));
+            }
+        }
+        public CollectionView FilteredView
+        {
+            get { return _FilteredView; }
+            set
+            {
+                _FilteredView = value;
+                OnPropertyChanged(nameof(FilteredView));
+            }
+        }
+        public bool FiltersAvailable
+        {
+            get { return !_FilterCurrentGameTrackCarTelemetries; }
+        }
+        public List<CarTrackTelemetry> AvailableComparisonTelemetries
+        {
+            get
+            {
+                if (_SelectedViewTelemetry == null)
+                    return null;
+                return _Settings.CarTrackTelemetries.Where(x =>
+                x.Equals(_SelectedViewTelemetry) == false
+                && x.GameName == _SelectedViewTelemetry.GameName
+                && x.TrackCode == _SelectedViewTelemetry.TrackCode
+                ).ToList();
+            }
+        }
+        public CarTrackTelemetry SelectedComparisonTelemetry
+        {
+            get { return _SelectedComparisonTelemetry; }
+            set
+            {
+                _SelectedComparisonTelemetry = value;
+                OnPropertyChanged(nameof(SelectedComparisonTelemetry));
+                if(value != null)
+                    GetSelectedViewTelemetryDatas(true);
             }
         }
         #endregion
@@ -438,9 +561,18 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             PluginManager = pluginManager;
             SimHub.Logging.Current.Info("Starting plugin SimRaceX.Telemetry.Comparer");
             Settings = this.ReadCommonSettings<TelemetryComparerSettings>("GeneralSettings", () => new TelemetryComparerSettings());
+            lock (_syncLock)
+            {
+                FilteredView = (CollectionView)CollectionViewSource.GetDefaultView(Settings.CarTrackTelemetries);
+                FilteredView.Filter = Filter;
+            }
+           
+           
 
             ThrottleLineSeries = new ObservableCollection<DataPoint>();
             BrakeLineSeries = new ObservableCollection<DataPoint>();
+            ThrottleComparisonLineSeries = new ObservableCollection<DataPoint>();
+            BrakeComparisonLineSeries = new ObservableCollection<DataPoint>();
 
             BindingOperations.EnableCollectionSynchronization(Settings.CarTrackTelemetries, _syncLock);
 
@@ -465,7 +597,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
             //SetPropertyChanged();
 
-            OnPropertyChanged(nameof(FilteredTelemetries));
+            //OnPropertyChanged(nameof(FilteredTelemetries));
         }
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
@@ -630,6 +762,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             {
                 ThrottleLineSeries.Clear();
                 BrakeLineSeries.Clear();
+                ThrottleComparisonLineSeries.Clear();
+                BrakeComparisonLineSeries.Clear();
             });
 
             foreach (TelemetryData data in SelectedViewTelemetry.TelemetryDatas)
@@ -641,6 +775,18 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 });
                
             }
+
+            if (_SelectedComparisonTelemetry != null)
+                foreach (TelemetryData comparisonData in _SelectedComparisonTelemetry.TelemetryDatas)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ThrottleComparisonLineSeries.Add(new DataPoint(comparisonData.LapDistance, comparisonData.Throttle));
+                        BrakeComparisonLineSeries.Add(new DataPoint(comparisonData.LapDistance, comparisonData.Brake));
+                    });
+
+                }
+
             //if (getMap)
             //    LoadMap($@"C:\Program Files (x86)\SimHub\PluginsData\IRacing\MapRecords\{_SelectedViewTelemetry.TrackCode}.shtl");
 
@@ -836,6 +982,49 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             ResetCurrentSessionBest();
             OnPropertyChanged(nameof(AvailableBestOfFriendTelemetries));
             SetReferenceLap();
+            //OnPropertyChanged(nameof(FilteredTelemetries));
+            SetFilters();
+        }
+        private bool Filter(object item)
+        {
+            var telemetry = item as CarTrackTelemetry;
+
+            //if (_FilterCurrentGameTrackCarTelemetries)
+            //{
+            //    if (PluginManager.LastData != null && PluginManager.LastData.NewData != null)
+            //    {
+            //        string gameName = PluginManager.LastData.GameName;
+            //        string carModel = PluginManager.LastData.NewData.CarModel;
+            //        string trackCode = PluginManager.LastData.NewData.TrackCode;
+
+            //        return
+            //            telemetry.GameName == gameName && telemetry.CarName == carModel && telemetry.TrackCode == trackCode;                       
+            //    }
+            //    else
+            //        return false;
+            //}
+            //else
+            //{
+                return telemetry.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0
+                && telemetry.TrackCode.IndexOf(SelectedFilteredTrack, StringComparison.OrdinalIgnoreCase) >= 0
+                && telemetry.CarName.IndexOf(SelectedFilteredCar, StringComparison.OrdinalIgnoreCase) >= 0
+                ;
+            //}
+        }
+        private void SetFilters()
+        {
+            OnPropertyChanged(nameof(FiltersAvailable));
+            if (!_FilterCurrentGameTrackCarTelemetries)
+                return;
+            if (PluginManager.LastData != null && PluginManager.LastData.NewData != null)
+            {
+                _SelectedFilteredGame = FilteredGames.FirstOrDefault(x => x.Equals(PluginManager.LastData.GameName));
+                _SelectedFilteredTrack = FilteredTracks.FirstOrDefault(x => x.Equals(PluginManager.LastData.NewData.TrackCode));
+                _SelectedFilteredCar = FilteredCars.FirstOrDefault(x => x.Equals(PluginManager.LastData.NewData.CarModel));
+                OnPropertyChanged(nameof(SelectedFilteredGame));
+                OnPropertyChanged(nameof(SelectedFilteredTrack));
+                OnPropertyChanged(nameof(SelectedFilteredCar));
+            }
             OnPropertyChanged(nameof(FilteredTelemetries));
         }
         #endregion
@@ -1031,7 +1220,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         /// <param name="e"></param>
         private void CarTrackTelemetries_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            OnPropertyChanged(nameof(FilteredTelemetries));
+            //OnPropertyChanged(nameof(FilteredTelemetries));
         }
         #endregion
 

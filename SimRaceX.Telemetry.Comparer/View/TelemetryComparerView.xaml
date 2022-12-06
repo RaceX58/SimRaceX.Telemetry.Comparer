@@ -239,20 +239,55 @@
             <StackPanel>
                 <Grid>
                     <StackPanel
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    >
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        >
                         <TextBlock
                             Text="Filter current game/track/car laps"
                             Width="200"
                             VerticalAlignment="Center"
-                        />
-                        <styles:SHToggleButton
-                                              
+                            />
+                        <styles:SHToggleButton                                              
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
-                            IsChecked="{Binding FilterTelemetries, UpdateSourceTrigger=PropertyChanged}"
+                            IsChecked="{Binding FilterCurrentGameTrackCarTelemetries, UpdateSourceTrigger=PropertyChanged}"
+                            />
+                        <TextBlock
+                            Margin="60,0,0,0"
+                            Text="Game"
+                            VerticalAlignment="Center"
+                            />
+                        <ComboBox
+                            Margin="10,0,0,0"
+                            ItemsSource="{Binding FilteredGames}"                    
+                            SelectedItem="{Binding SelectedFilteredGame}"
+                            Width="150"   
+                            IsEnabled="{Binding FiltersAvailable}"
+                            />
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Text="Car"
+                            VerticalAlignment="Center"
+                            />
+                        <ComboBox
+                            Margin="10,0,0,0"
+                            ItemsSource="{Binding FilteredCars}"                    
+                            SelectedItem="{Binding SelectedFilteredCar}"
+                            Width="150"   
+                              IsEnabled="{Binding FiltersAvailable}"
+                            />
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Text="Track"
+                            VerticalAlignment="Center"
+                            />
+                        <ComboBox
+                            Margin="10,0,0,0"
+                            ItemsSource="{Binding FilteredTracks}"                    
+                            SelectedItem="{Binding SelectedFilteredTrack}"
+                            Width="150"      
+                            IsEnabled="{Binding FiltersAvailable}"
                             />
                     </StackPanel>
                     <StackPanel
@@ -303,6 +338,9 @@
                             <GridViewColumn DisplayMemberBinding="{Binding LapTime,StringFormat=mm\\:ss\\.fff, UpdateSourceTrigger=PropertyChanged}" Width="125" >
                                 <GridViewColumnHeader Content="Lap time" />
                             </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Created,StringFormat=dd/MM/yyyy HH:mm, UpdateSourceTrigger=PropertyChanged}" Width="125" >
+                                <GridViewColumnHeader Content="Creation date" />
+                            </GridViewColumn>
                             <!--<GridViewColumn  >
                                 <GridViewColumnHeader Content="Use as reference lap" />
                                 <GridViewColumn.CellTemplate>
@@ -340,56 +378,92 @@
             Title="Telemetry"
             Grid.Row="3"
             >
-
-            <oxy:Plot  
-                    x:Name="plot"
-                   
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel
+                    Orientation="Horizontal"
+                    >
+                    <TextBlock
+                        Margin="0,0,0,0"
+                        Text="Comparaison lap"
+                        VerticalAlignment="Center"
+                        />
+                    <ComboBox
+                        Margin="10,0,0,0"
+                        ItemsSource="{Binding AvailableComparisonTelemetries}"                    
+                        SelectedItem="{Binding SelectedComparisonTelemetry}"
+                        DisplayMemberPath="FormattedPlayerNameCarLapTime"
+                        Width="250"      
+                      
+                        />
+                </StackPanel>
+                <oxy:Plot  
+                    Grid.Row="1"
+                    x:Name="plot"                   
                     VerticalAlignment="Top" 
                     Background="#00FFFFFF" 
-                    Margin="-8,-6,0,-8" 
+                    Margin="0,20,0,-8" 
                     BorderThickness="1"
                     IsMouseWheelEnabled="False" 
                     PlotAreaBorderThickness="0,0,0,1" 
                     PlotAreaBorderColor="{DynamicResource BlackColor}" 
                     Height="200" 
-                    PreviewMouseDown="plot_PreviewMouseDown"
+                    PreviewMouseDown="plot_PreviewMouseDown"                   
+                    IsLegendVisible="False"
                     >
-                <oxy:Plot.DefaultTrackerTemplate>
-                    <ControlTemplate>
-                        <oxy:TrackerControl 
-                            Position="{Binding Position}" 
-                            LineStroke="Red"                           
-                            HorizontalLineVisibility="Collapsed"
-                            >
+                    <oxy:Plot.DefaultTrackerTemplate>
+                        <ControlTemplate>
+                            <oxy:TrackerControl 
+                                Position="{Binding Position}" 
+                                LineStroke="Red"                           
+                                HorizontalLineVisibility="Collapsed"
+                                ShowPointer="False"
+                                >
 
-                        </oxy:TrackerControl>
+                            </oxy:TrackerControl>
 
-                    </ControlTemplate>
-                </oxy:Plot.DefaultTrackerTemplate>
-                <!--<oxy:Plot.Annotations>
+                        </ControlTemplate>
+                    </oxy:Plot.DefaultTrackerTemplate>
+                    <!--<oxy:Plot.Annotations>
                     <oxy:LineAnnotation
                         Type="Vertical"
                         X="0.2"                       
                         />
                 </oxy:Plot.Annotations>-->
-                <oxy:Plot.Series>
-                    <oxy:LineSeries 
-                        BorderThickness="0" 
-                        Color="#4CAF50" 
-                        ItemsSource="{Binding Path=ThrottleLineSeries}"
-                    
-                        />
-                    <oxy:LineSeries 
-                        BorderThickness="0" 
-                        Color="#F44336" 
-                        ItemsSource="{Binding Path=BrakeLineSeries}" />
-                </oxy:Plot.Series>
-                <oxy:Plot.Axes>
-                    <oxy:LinearAxis IsAxisVisible="True" Position="Bottom" FontSize="8" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" Opacity="0.5" TicklineColor="{DynamicResource BlackColor}" MajorStep="20" MajorGridlineColor="#4497BCC1" />
-                    <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="Transparent" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MajorGridlineStyle="Dot" MajorStep="20" MajorGridlineThickness="1" Minimum="0" Maximum="105" />
-                    <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MinorStep="50" MajorStep="50" Minimum="0" Maximum="105" />
-                </oxy:Plot.Axes>
-            </oxy:Plot>
+                    <oxy:Plot.Series>
+                        <oxy:LineSeries 
+                            BorderThickness="0" 
+                            Color="Gray"
+                            ItemsSource="{Binding Path=ThrottleComparisonLineSeries}"
+                            />
+                        <oxy:LineSeries 
+                            BorderThickness="0" 
+                            Color="Gray"
+                            ItemsSource="{Binding Path=BrakeComparisonLineSeries}"
+                            />
+                        <oxy:LineSeries 
+                            BorderThickness="0" 
+                            Color="#4CAF50" 
+                            ItemsSource="{Binding Path=ThrottleLineSeries}"                   
+                            />
+                        <oxy:LineSeries 
+                            BorderThickness="0" 
+                            Color="#F44336" 
+                            ItemsSource="{Binding Path=BrakeLineSeries}"
+                            />                   
+                    </oxy:Plot.Series>
+                    <oxy:Plot.Axes>
+                        <oxy:LinearAxis IsAxisVisible="True" Position="Bottom" FontSize="8" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" Opacity="0.5" TicklineColor="{DynamicResource BlackColor}" MajorStep="20" MajorGridlineColor="#4497BCC1" />
+                        <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="Transparent" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MajorGridlineStyle="Dot" MajorStep="20" MajorGridlineThickness="1" Minimum="0" Maximum="105" />
+                        <oxy:LinearAxis Position="Left" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" TicklineColor="{DynamicResource BlackColor}" FontSize="8" Opacity="0.8" MinorStep="50" MajorStep="50" Minimum="0" Maximum="105" />
+                    </oxy:Plot.Axes>
+                </oxy:Plot>
+            </Grid>
+
+           
         </styles:SHSection>
         <TextBlock
             Grid.Row="4"

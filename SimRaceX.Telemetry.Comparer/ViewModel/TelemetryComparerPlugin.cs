@@ -69,6 +69,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         private string _SelectedFilteredCar = "";
         private CollectionView _FilteredView;
         private CarTrackTelemetry _SelectedComparisonTelemetry;
+        private bool _IsFixedSetupSession;
+        private object _Position;
         #endregion
 
         #region Properties
@@ -130,7 +132,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         public PlotModel TelemetryPlotModel
         {
             get { return _TelemetryPlotModel; }
-            set { _TelemetryPlotModel = value; OnPropertyChanged(nameof(TelemetryPlotModel)); }
+            set { _TelemetryPlotModel = value; OnPropertyChanged(nameof(TelemetryPlotModel)); TelemetryPlotModel.TrackerChanged += TelemetryPlotModel_TrackerChanged; }
         }
         public ObservableCollection<DataPoint> ThrottleLineSeries
         {
@@ -226,6 +228,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                         && x.TrackCode == trackCode
                                         && x.CarName == carModel
                                         && x.PlayerName != playerName
+                                        && x.IsFixedSetup == _IsFixedSetupSession
                                         ).ToList();
             }
         }
@@ -281,6 +284,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         {
             get
             {
+                if (_SelectedFilteredGame is null)
+                    _SelectedFilteredGame = "";
+                if (_SelectedFilteredTrack is null)
+                    _SelectedFilteredTrack = "";
+                if (_SelectedFilteredCar is null)
+                    _SelectedFilteredCar = "";
                 return _Settings.CarTrackTelemetries.Where(x =>
                     x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0
                     && x.TrackCode.IndexOf(SelectedFilteredTrack, StringComparison.OrdinalIgnoreCase) >= 0
@@ -330,7 +339,11 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             {
                 var values = new List<string>();
                 values.Add("");
-                var items = _Settings.CarTrackTelemetries.Where(x=>x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.TrackCode).Distinct().ToList();
+                var items = _Settings.CarTrackTelemetries.Where(
+                    x=>x.GameName.IndexOf(SelectedFilteredGame, StringComparison.OrdinalIgnoreCase) >= 0
+                    &&
+                    x.CarName.IndexOf(SelectedFilteredCar, StringComparison.OrdinalIgnoreCase) >= 0
+                    ).Select(x => x.TrackCode).Distinct().ToList();
                 items.Sort();
                 foreach (var item in items)
                     values.Add(item);
@@ -367,6 +380,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             {
                 _SelectedFilteredCar = value;
                 OnPropertyChanged(nameof(SelectedFilteredCar));
+                OnPropertyChanged(nameof(FilteredTracks));
                 OnPropertyChanged(nameof(FilteredTelemetries));
             }
         }
@@ -416,6 +430,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 return $"SimRaceX Telemetry Comparer - v{fvi.FileVersion}";
             }
         }
+        public bool IsFixedSetupSession
+        {
+            get { return _IsFixedSetupSession; }
+            set { _IsFixedSetupSession = value; OnPropertyChanged(nameof(IsFixedSetupSession)); }
+        }
+        public object Position
+        {
+            get { return _Position; }
+            set { _Position = value; OnPropertyChanged(nameof(Position)); }
+        }
         #endregion
 
         #region Commands
@@ -444,6 +468,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
             Settings.CarTrackTelemetries.Remove(carTrackTelemetry);
             this.SaveCommonSettings("GeneralSettings", Settings);
+
+            OnPropertyChanged(nameof(FilteredTelemetries));
 
             if (PluginManager.LastData.GameRunning)
             {
@@ -499,7 +525,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             string exportDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Exports");
             if (!Directory.Exists(exportDir))
                 Directory.CreateDirectory(exportDir);
-            string fileName = System.IO.Path.Combine(exportDir, $"{_SelectedViewTelemetry.PlayerName}_{_SelectedViewTelemetry.TrackName}_{_SelectedViewTelemetry.CarName}.json");
+            string fileName = System.IO.Path.Combine(exportDir, $"{_SelectedViewTelemetry.PlayerName}_{_SelectedViewTelemetry.TrackName}_{_SelectedViewTelemetry.CarName}_{_SelectedViewTelemetry.SetupType}_{_SelectedViewTelemetry.LapTime.ToString(@"mm\.ss\.fff")}.json");
             using (StreamWriter file = File.CreateText(fileName))
             {
                 JsonSerializer serializer = new JsonSerializer();
@@ -545,17 +571,21 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 x.GameName == carTrackTelemetry.GameName
                 && x.TrackName == carTrackTelemetry.TrackName
                 && x.CarName == carTrackTelemetry.CarName
-                && x.PlayerName == carTrackTelemetry.PlayerName);
+                && x.PlayerName == carTrackTelemetry.PlayerName
+                && x.IsFixedSetup == carTrackTelemetry.IsFixedSetup
+                );
 
                 if  (existingTelemetry != null
                     && MessageBox.Show("An entry already exist for this combo. It will overwrite the existing datas. Do you still wan't to import it?", "Entry already exist", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
                     return;
 
                 if (existingTelemetry != null)
-                    Settings.CarTrackTelemetries.Remove(existingTelemetry);
-
-                Settings.CarTrackTelemetries.Add(carTrackTelemetry);
+                    lock (_syncLock)
+                        Settings.CarTrackTelemetries.Remove(existingTelemetry);
+                lock (_syncLock)
+                    Settings.CarTrackTelemetries.Add(carTrackTelemetry);
                 this.SaveCommonSettings("GeneralSettings", Settings);
+                OnPropertyChanged(nameof(FilteredTelemetries));
 
             }
         }
@@ -604,6 +634,9 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
             pluginManager.NewLap += PluginManager_NewLap;
 
+          
+
+
             //SetPropertyChanged();
 
             //OnPropertyChanged(nameof(FilteredTelemetries));
@@ -615,12 +648,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                 IsInpit = 1;
                 return;
             }
-                
-
 
             string gameName = data.GameName;
             if (gameName == "IRacing")
             {
+
+
                 SteeringAngle = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.SteeringWheelAngle")) * -58.0;
                 var incidentCount = Convert.ToInt32(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.PlayerCarMyIncidentCount"));
                 if (incidentCount > IncidentCount)
@@ -675,6 +708,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                   SelectedCarTrackTelemetry.GameName != gameName
                                   || SelectedCarTrackTelemetry.CarName != carModel
                                   || SelectedCarTrackTelemetry.TrackCode != trackCode
+                                  || SelectedCarTrackTelemetry.IsFixedSetup != IsFixedSetupSession
 
                                   )
                                 )
@@ -912,11 +946,12 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             string trackCode = PluginManager.LastData.NewData.TrackCode;
 
             return _Settings.CarTrackTelemetries.FirstOrDefault(x =>
-                                    x.GameName == gameName
-                                    && x.TrackCode == trackCode
-                                    && x.CarName == carModel
-                                    && x.PlayerName == playerName
-                                    );
+                    x.GameName == gameName
+                    && x.TrackCode == trackCode
+                    && x.CarName == carModel
+                    && x.PlayerName == playerName
+                    && x.IsFixedSetup == _IsFixedSetupSession
+                    );
         }
         public Control GetWPFSettingsControl(PluginManager pluginManager)
         {
@@ -939,10 +974,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                               x.CarName == PluginManager.LastData.NewData.CarModel
                               &&
                               x.Type == _Settings.ComparisonModes[1]
+                              &&
+                              x.IsFixedSetup == _IsFixedSetupSession
                               );
             if (savedCurrentSession != null)
                 Settings.CarTrackTelemetries.Remove(savedCurrentSession);
             this.SaveCommonSettings("GeneralSettings", Settings);
+            OnPropertyChanged(nameof(FilteredTelemetries));
 
 
             ResetReferenceLap();
@@ -984,6 +1022,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             IncidentCount = 0;
             CurrentLapHasIncidents = false;
 
+            if (PluginManager.GameName == "IRacing")
+                IsFixedSetupSession = PluginManager.GetPropertyValue("DataCorePlugin.GameRawData.SessionData.DriverInfo.DriverSetupLoadTypeName").ToString() == "fixed";
+            else
+                IsFixedSetupSession = false;
 
             IsInpit = 1;
 
@@ -1052,6 +1094,11 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
             //Check the current lap telemetry is valid
             if (_CurrentLapTelemetry != null && _CurrentLapTelemetry.Count > 0 && IsCurrentLapValid)
             {
+                if (PluginManager.GameName == "IRacing")
+                    IsFixedSetupSession = PluginManager.GetPropertyValue("DataCorePlugin.GameRawData.SessionData.DriverInfo.DriverSetupLoadTypeName").ToString() == "fixed";
+                else
+                    IsFixedSetupSession = false;
+
                 double firstDataDistance = _CurrentLapTelemetry.First().LapDistance;
                 double lastDataDistance = _CurrentLapTelemetry.Last().LapDistance;
                 //Try to check if a complete lap has be done
@@ -1066,7 +1113,9 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                         TrackCode = data.NewData.TrackCode,
                         LapTime = data.NewData.LastLapTime,
                         TelemetryDatas = _CurrentLapTelemetry,
-                        Created = DateTime.Now
+                        Created = DateTime.Now,
+                        IsFixedSetup = _IsFixedSetupSession,
+                        PluginVersion = Version
                     };
                   
                     bool isLatestLapFaster = false;
@@ -1110,12 +1159,16 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                                    x.CarName == SelectedCarTrackTelemetry.CarName
                                    &&
                                    x.Type == _Settings.ComparisonModes[1]
+                                   &&
+                                   x.IsFixedSetup == _IsFixedSetupSession
                                    );
                             if (savedCurrentSession != null)
                                 Settings.CarTrackTelemetries.Remove(savedCurrentSession);
                             latestLapTelemetry.Type = _Settings.ComparisonModes[1];
-                            Settings.CarTrackTelemetries.Add(CurrentSessionBestTelemetry);
+                            lock (_syncLock)
+                                Settings.CarTrackTelemetries.Add(CurrentSessionBestTelemetry);
                             this.SaveCommonSettings("GeneralSettings", Settings);
+                            OnPropertyChanged(nameof(FilteredTelemetries));
                         }
                     }
 
@@ -1231,6 +1284,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         {
             //OnPropertyChanged(nameof(FilteredTelemetries));
         }
+        private void TelemetryPlotModel_TrackerChanged(object sender, TrackerEventArgs e)
+        {
+
+        }
         #endregion
 
         //private void LoadMap(string file)
@@ -1337,6 +1394,8 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
         //    //_View.mapCanvas.Height = num6 - num4 + 400.0;
         //    _View.ZoomBorder.UpdateLayout();
         //    _View.ZoomBorder.AutoFit();
+
+            
         //}
 
     }

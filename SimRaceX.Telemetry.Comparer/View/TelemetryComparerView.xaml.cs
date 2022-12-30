@@ -1,4 +1,5 @@
 ﻿using OxyPlot;
+using OxyPlot.Axes;
 using SimRaceX.Telemetry.Comparer.ViewModel;
 using System;
 using System.Collections.Generic;
@@ -34,12 +35,22 @@ namespace SimRaceX.Telemetry.Comparer.View
             this.DataContext = Plugin;
         }
 
-        private void plot_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-           // var test = plot.DefaultTrackerTemplate.LoadContent();
+        //private void plot_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        //{
            
-        }
 
+        //}
 
+        //private void plot_MouseDown(object sender, MouseButtonEventArgs e)
+        //{
+        //    //var test = plot.DefaultTrackerTemplate.LoadContent();
+
+        //    //OxyPlot.ElementCollection<OxyPlot.Axes.Axis> axisList = plot.ActualModel.Axes;
+
+        //    //Axis xAxis = axisList.FirstOrDefault(ax => ax.Position == AxisPosition.Bottom);
+        //    //Axis yAxis = axisList.FirstOrDefault(ax => ax.Position == AxisPosition.Left);
+
+        //   // DataPoint dataPointp = OxyPlot.Axes.Axis.InverseTransform(e.Device.Target, xAxis, yAxis);
+        //}
     }
 }

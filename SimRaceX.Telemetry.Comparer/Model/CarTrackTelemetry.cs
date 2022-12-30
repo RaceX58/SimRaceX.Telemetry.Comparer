@@ -19,6 +19,8 @@ namespace SimRaceX.Telemetry.Comparer.Model
         private string _TrackCode;
         private string _Type;
         private DateTime? _Created;
+        private bool _IsFixedSetup;
+        private string _PluginVersion;
         //private bool _UseAsReferenceLap;
         #endregion
 
@@ -69,7 +71,7 @@ namespace SimRaceX.Telemetry.Comparer.Model
         }
         public string FormattedPlayerNameCarLapTime
         {
-            get { return $"{PlayerName} - {CarName} - {LapTime.ToString(@"mm\:ss\.fff")}"; }
+            get { return $"{PlayerName} - {CarName} - {LapTime.ToString(@"mm\:ss\.fff")} - {SetupType}"; }
         }
         public string Type
         {
@@ -80,6 +82,20 @@ namespace SimRaceX.Telemetry.Comparer.Model
         {
             get { return _Created; }
             set { _Created = value; OnPropertyChanged(nameof(Created)); }
+        }
+        public bool IsFixedSetup
+        {
+            get { return _IsFixedSetup; }
+            set { _IsFixedSetup = value; OnPropertyChanged(nameof(IsFixedSetup)); }
+        }
+        public string SetupType
+        {
+            get { return IsFixedSetup ? "Fixed" : "Open"; }
+        }
+        public string PluginVersion
+        {
+            get { return _PluginVersion; }
+            set { _PluginVersion = value; OnPropertyChanged(nameof(PluginVersion)); }
         }
         #endregion
 

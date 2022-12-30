@@ -25,6 +25,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
+        <!--Configuration-->
         <styles:SHSection
            Grid.Row="0"
            Title="Configuration">
@@ -57,15 +58,15 @@
                         />
                     </StackPanel>
                     <StackPanel
-                    Grid.Row="0"
-                    Orientation="Horizontal"
-                    VerticalAlignment="Top"
-                    Margin="20,10,0,0"
-                    >
+                        Grid.Row="0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="20,10,0,0"
+                        >
                         <TextBlock
-                        Text="Display brake trace"
-                        Width="200"
-                        />
+                            Text="Display brake trace"
+                            Width="200"
+                            />
                         <styles:SHToggleButton
                         Margin="20,0,0,0"                       
                         HorizontalAlignment="Left"
@@ -233,6 +234,7 @@
        
 
         </styles:SHSection>
+        <!--Available telemetry datas-->
         <styles:SHSection
            Grid.Row="1"
            Title="Available telemetry datas">
@@ -309,9 +311,7 @@
 
                     </StackPanel>
                 </Grid>
-               
-                    
-                
+
                 <ListView   
                     Margin="0,10,0,0"
                     ItemsSource="{Binding FilteredTelemetries, UpdateSourceTrigger=PropertyChanged}" 
@@ -331,6 +331,9 @@
                             </GridViewColumn>
                             <GridViewColumn DisplayMemberBinding="{Binding Type, UpdateSourceTrigger=PropertyChanged}" Width="250">
                                 <GridViewColumnHeader Content="Type" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding SetupType, UpdateSourceTrigger=PropertyChanged}" Width="250">
+                                <GridViewColumnHeader Content="Setup type" />
                             </GridViewColumn>
                             <GridViewColumn DisplayMemberBinding="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}" Width="200">
                                 <GridViewColumnHeader Content="Player name" />
@@ -374,9 +377,10 @@
                 </ListView>
             </StackPanel>
         </styles:SHSection>
+        <!--Telemetry-->
         <styles:SHSection           
             Title="Telemetry"
-            Grid.Row="3"
+            Grid.Row="2"
             >
             <Grid>
                 <Grid.RowDefinitions>
@@ -396,7 +400,7 @@
                         ItemsSource="{Binding AvailableComparisonTelemetries}"                    
                         SelectedItem="{Binding SelectedComparisonTelemetry}"
                         DisplayMemberPath="FormattedPlayerNameCarLapTime"
-                        Width="250"      
+                        Width="500"      
                       
                         />
                 </StackPanel>
@@ -410,19 +414,31 @@
                     IsMouseWheelEnabled="False" 
                     PlotAreaBorderThickness="0,0,0,1" 
                     PlotAreaBorderColor="{DynamicResource BlackColor}" 
-                    Height="200" 
-                    PreviewMouseDown="plot_PreviewMouseDown"                   
-                    IsLegendVisible="False"
+                    Height="200"              
+                    IsLegendVisible="False"                    
                     >
                     <oxy:Plot.DefaultTrackerTemplate>
                         <ControlTemplate>
                             <oxy:TrackerControl 
-                                Position="{Binding Position}" 
+                                Position="{Binding DataContext.Position, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                 LineStroke="Red"                           
                                 HorizontalLineVisibility="Collapsed"
+                                
                                 ShowPointer="False"
                                 >
-
+                                <oxy:TrackerControl.Content>
+                                    <StackPanel >
+                                        <DockPanel>
+                                            <TextBlock Text="{Binding XAxis.Title}" Foreground="Red" />
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding DataPoint.X}" Foreground="Red" />
+                                        </DockPanel>
+                                        <DockPanel>
+                                            <TextBlock Text="{Binding YAxis.Title}" Foreground="Green" />
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding DataPoint.Y}" Foreground="Green" 
+                                       FontWeight="Bold" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                </oxy:TrackerControl.Content>
                             </oxy:TrackerControl>
 
                         </ControlTemplate>
@@ -465,12 +481,34 @@
 
            
         </styles:SHSection>
+        <!--<styles:SHSection
+            Grid.Row="3"
+            Title="Map">
+            <paz:ZoomBorder 
+                Name="ZoomBorder"               
+                ZoomSpeed="1.2"
+                Stretch="None"
+                Background="#222"
+                ClipToBounds="True"
+                Focusable="True" 
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Stretch">
+                <Canvas Name="mapCanvas"
+                        Width="300" 
+                        Height="400"  >
+                </Canvas>
+
+            </paz:ZoomBorder>
+
+
+        </styles:SHSection>-->
         <TextBlock
             Grid.Row="4"
             Text="{Binding Version}"
             HorizontalAlignment="Right"
             Margin="10"
             />
+       
         <!--<Grid
             Grid.Row="3"
             >

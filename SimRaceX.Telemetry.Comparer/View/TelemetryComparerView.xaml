@@ -114,7 +114,7 @@
                         Margin="20,10,0,0"
                         >
                         <TextBlock
-                            Text="Display steering angle (iRacing only)"
+                            Text="Display steering angle"
                             Width="200"
                             />
                         <styles:SHToggleButton

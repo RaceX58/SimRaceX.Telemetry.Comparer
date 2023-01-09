@@ -662,6 +662,10 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                     IncidentCount = incidentCount;
                 }
             }
+            else if (gameName == "RFactor2")
+            {
+                SteeringAngle = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayerTelemetry.mUnfilteredSteering")) * Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayerTelemetry.mPhysicalSteeringWheelRange")) / 2.0;
+            }
             else
                 SteeringAngle = null;
             UpdateSteeringAngle();
@@ -721,13 +725,13 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                             //Add data to current lap telemetry
                             if (data.NewData.CurrentLapTime.TotalMilliseconds > 0)
                             {
-                                if (_CurrentLapTelemetry.Count == 0 || _CurrentLapTelemetry.Last().LapDistance < data.NewData.CarCoordinates[0])
+                                if (_CurrentLapTelemetry.Count == 0 || _CurrentLapTelemetry.Last().LapDistance < data.NewData.TrackPositionPercent)
                                     _CurrentLapTelemetry.Add(new TelemetryData
                                     {
                                         Throttle = data.NewData.Throttle,
                                         Brake = data.NewData.Brake,
                                         Clutch = data.NewData.Clutch,
-                                        LapDistance = data.NewData.CarCoordinates[0],
+                                        LapDistance = data.NewData.TrackPositionPercent,
                                         Speed = data.NewData.SpeedKmh,
                                         Gear = data.NewData.Gear,
                                         SteeringAngle = SteeringAngle,
@@ -739,7 +743,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
                             if (SelectedCarTrackTelemetry != null && SelectedCarTrackTelemetry.TelemetryDatas.Count > 0)
                             {
                                 //get current lap distance percent
-                                double lapDistance = data.NewData.CarCoordinates[0];
+                                double lapDistance = data.NewData.TrackPositionPercent;
                                 double distance = SelectedCarTrackTelemetry.TelemetryDatas[0].LapDistance - lapDistance;
                                 int index = -1;
                                 //loop

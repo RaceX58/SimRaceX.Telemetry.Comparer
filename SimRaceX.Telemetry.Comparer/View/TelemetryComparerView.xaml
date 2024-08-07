@@ -33,7 +33,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition Width="*"/>                    
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel               
                     VerticalAlignment="Top"
@@ -140,7 +140,7 @@
                             Text="Comparison mode"
                             Width="200"
                             VerticalAlignment="Center"
-                        />                       
+                        />
                         <ComboBox
                             ItemsSource="{Binding Settings.ComparisonModes}"
                             SelectedItem="{Binding Settings.SelectedComparisonMode}"
@@ -206,7 +206,7 @@
                             Width="200"
                             />
                     </StackPanel>
-                    
+
                 </StackPanel>
                 <StackPanel
                      Margin="40,5,10,10"
@@ -228,10 +228,10 @@
                         VerticalAlignment="Top"
                         />
                 </StackPanel>
-               
+
 
             </Grid>
-       
+
 
         </styles:SHSection>
         <!--Available telemetry datas-->
@@ -352,22 +352,24 @@
                                             IsChecked="{Binding UseAsReferenceLap, UpdateSourceTrigger=PropertyChanged}"
                                             IsEnabled="False"
                                             />
-                                        --><!--IsEnabled="{Binding DataContext.IsBestOfFriendMode, RelativeSource={RelativeSource AncestorType=UserControl}}"--><!--
+                                        -->
+                            <!--IsEnabled="{Binding DataContext.IsBestOfFriendMode, RelativeSource={RelativeSource AncestorType=UserControl}}"-->
+                            <!--
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>-->
-                            <GridViewColumn Width="50" >
+                            <GridViewColumn Width="75" >
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button
                                         Background="Transparent"
                                         BorderThickness="0"
                                         Command="{Binding Path=DataContext.DeleteCarTrackTelemetryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}"                                         
+                                        CommandParameter="{Binding}"  
+                                            Content="Delete"
+                                            
                                         >
-                                            <iconPacks:PackIconMaterialDesign                                              
-                                            Kind="Delete" 
-                                        />
+
                                         </Button>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -469,7 +471,7 @@
                             BorderThickness="0" 
                             Color="#F44336" 
                             ItemsSource="{Binding Path=BrakeLineSeries}"
-                            />                   
+                            />
                     </oxy:Plot.Series>
                     <oxy:Plot.Axes>
                         <oxy:LinearAxis IsAxisVisible="True" Position="Bottom" FontSize="8" AxislineColor="{DynamicResource BlackColor}" TextColor="{DynamicResource BlackColor}" Opacity="0.5" TicklineColor="{DynamicResource BlackColor}" MajorStep="20" MajorGridlineColor="#4497BCC1" />
@@ -479,7 +481,7 @@
                 </oxy:Plot>
             </Grid>
 
-           
+
         </styles:SHSection>
         <!--<styles:SHSection
             Grid.Row="3"
@@ -508,7 +510,7 @@
             HorizontalAlignment="Right"
             Margin="10"
             />
-       
+
         <!--<Grid
             Grid.Row="3"
             >
@@ -544,12 +546,14 @@
 
                         </ControlTemplate>
                     </oxy:Plot.DefaultTrackerTemplate>
-                    --><!--<oxy:Plot.Annotations>
+                    -->
+        <!--<oxy:Plot.Annotations>
                     <oxy:LineAnnotation
                         Type="Vertical"
                         X="0.2"                       
                         />
-                </oxy:Plot.Annotations>--><!--
+                </oxy:Plot.Annotations>-->
+        <!--
                     <oxy:Plot.Series>
                         <oxy:LineSeries 
                         BorderThickness="0" 
@@ -591,9 +595,9 @@
 
         </styles:SHSection>
         </Grid>-->
-        
-      
+
+
     </Grid>
- 
-  
+
+
 </UserControl>

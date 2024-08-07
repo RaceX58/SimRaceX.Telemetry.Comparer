@@ -699,7 +699,7 @@ namespace SimRaceX.Telemetry.Comparer.ViewModel
 
 
                     //Main loop
-                    if (tickCount == (SimHub.Licensing.LicenseManager.IsValid ? 3 : 0))
+                    if (tickCount == (pluginManager.IsSimHubLicenceValid ? 3 : 0))
                     {
                         IsInpit = data.NewData.IsInPit;
 
